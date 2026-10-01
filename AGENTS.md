@@ -289,11 +289,14 @@ prueba_*.zip
 
 ### Sigue pendiente
 
-- Fuera de `Modulo11/` hay material **sin trackear en la raíz del repo**:
-  `Modulo10/` (README, `mis_funciones.py`, `spacex-dash-app.py`, 3 notebooks,
-  `spacex_launch_dash.csv`), más `.agents/` y `.claude/`. **No se han tocado.**
-  Preguntar al usuario antes de añadirlos.
-- La rama `main` está **2 commits por delante de `origin/main`**: no se ha
+- El usuario commiteó por su cuenta `Modulo10/`, `.agents/` y `.claude/` en el
+  commit `a0881d1` *"si hacerlo"* (2026-10-02 01:18). **Ya están versionados**,
+  así que el punto anterior queda cerrado.
+- **No hay `.gitignore` en la raíz del repo** (`/home/miguel/mi_entorno/Python`),
+  solo en `Modulo11/`. Por eso ese commit arrastró
+  `Modulo10/__pycache__/*.pyc` (ruido). Si vuelve a aparecer basura así, crear
+  un `.gitignore` en la raíz con `__pycache__/` y `*.pyc`.
+- La rama `main` está **4 commits por delante de `origin/main`**: no se ha
   hecho `git push`. Solo si el usuario lo pide.
 
 ---
