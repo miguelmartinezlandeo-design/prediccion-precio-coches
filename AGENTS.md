@@ -15,6 +15,10 @@ británicos.
 **App principal: `prediccion_coche2.py`** (las otras dos, `prediccion_coche.py` y
 `prediccion_coche1.py`, son borradores antiguos y están abandonadas).
 
+> **Última sesión: 2026-10-02.** Bug del espacio inicial corregido, dataset
+> limpio generado, modelo reentrenado y verificado, `AGENTS.md` creado y todo
+> commiteado en `9143a5a`. Retoma desde la sección 12.
+
 ---
 
 ## 2. REGLA OBLIGATORIA: delegar todo análisis de datos en `data-analyst`
@@ -256,19 +260,53 @@ combinaciones imposibles, y **no cambies los hyperparameters por su cuenta**.
    y el PKL deben estar siempre sincronizados.
 7. Comenta el trabajo **en español**.
 8. **No hagas commits** salvo que el usuario lo pida explícitamente.
+9. Si editas `AGENTS.md`, commitea el cambio en la misma sesión: es la memoria
+   del proyecto y solo sirve si está en el repo.
 
 ---
 
-## 11. Pendiente conocido: higiene de Git
+## 11. Estado de Git (RESUELTO en parte)
 
-- La raíz del repo es `/home/miguel/mi_entorno/Python` y **la carpeta `Modulo11/`
-  entera está sin trackear** (`git status` → `?? ./`).
-- **No hay `.gitignore` en ninguna de las dos carpetas.** Si se hace `git add`,
-  los `.pkl` (33 MB y 35 MB) y los `.ipynb` (hasta 1,5 MB) entran al repo.
-  Crea un `.gitignore` con al menos:
-  ```
-  .venv/
-  __pycache__/
-  *.pkl
-  ```
-  y decide con el usuario si los backups se versionan.
+**Hecho el 2026-10-02**, commit `9143a5a` *"Corrige el bug que hacia que todos los
+coches valieran 18.032,07 €"*: se versionaron los 18 ficheros de `Modulo11/`
+(código, `AGENTS.md`, notebooks, CSV original y limpio, tema de Streamlit).
+
+Se creó `Modulo11/.gitignore` con:
+
+```
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.pkl          # 67 MB entre modelo y backup; se regenera con entrenar_modelo.py
+*_backup_*     # copias byte a byte de archivos ya versionados
+prueba_*.zip
+```
+
+**Verificado: 0 ficheros `.pkl` dentro del repo.** `modelo_coches.pkl` y
+`modelo_coches_backup_20261002_005315.pkl` siguen en disco, solo fuera de git.
+`.opencode/node_modules` ya lo ignoraba su propio `.gitignore`.
+
+### Sigue pendiente
+
+- Fuera de `Modulo11/` hay material **sin trackear en la raíz del repo**:
+  `Modulo10/` (README, `mis_funciones.py`, `spacex-dash-app.py`, 3 notebooks,
+  `spacex_launch_dash.csv`), más `.agents/` y `.claude/`. **No se han tocado.**
+  Preguntar al usuario antes de añadirlos.
+- La rama `main` está **2 commits por delante de `origin/main`**: no se ha
+  hecho `git push`. Solo si el usuario lo pide.
+
+---
+
+## 12. Cómo retomar el proyecto
+
+```bash
+cd /home/miguel/mi_entorno/Python/Modulo11
+source .venv/bin/activate
+streamlit run prediccion_coche2.py
+```
+
+Estado: **todo funcionando y verificado**. CSV limpio sincronizado con el PKL,
+app arrancada sin errores, comparativa de métricas hecha. Lo único abierto es el
+punto de la sección 9 (precios idénticos con combinaciones imposibles), que está
+diagnosticado y no conviene tocar sin hablar con el usuario.
