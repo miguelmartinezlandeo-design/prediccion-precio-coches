@@ -1,0 +1,42 @@
+# Tema claro y limpio para la app de predicción de coches
+# Tipografías: Poppins (titulares) + Inter (texto) + JetBrains Mono (código)
+
+[theme]
+base = "light"
+primaryColor = "#1D4ED8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F1F5F9"
+codeBackgroundColor = "#F1F5F9"
+textColor = "#0F172A"
+linkColor = "#1D4ED8"
+borderColor = "#E2E8F0"
+showWidgetBorder = true
+showSidebarBorder = false
+baseRadius = "12px"
+buttonRadius = "full"
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+headingFont = "'Poppins':https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize = 16
+baseFontWeight = 400
+headingFontSizes = ["34px", "26px", "20px", "17px", "15px", "13px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+linkUnderline = false
+dataframeBorderColor = "#E2E8F0"
+dataframeHeaderBackgroundColor = "#F8FAFC"
+
+# Colores de estado
+greenColor = "#15803D"
+redColor = "#B91C1C"
+blueColor = "#1D4ED8"
+orangeColor = "#C2410C"
+yellowColor = "#A16207"
+violetColor = "#7C3AED"
+grayColor = "#475569"
+
+chartCategoricalColors = ["#1D4ED8", "#15803D", "#C2410C", "#7C3AED", "#B91C1C", "#A16207", "#475569"]
+
+[theme.sidebar]
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#F1F5F9"
+borderColor = "#E2E8F0"

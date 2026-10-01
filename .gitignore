@@ -1,0 +1,16 @@
+# Entorno virtual
+.venv/
+
+# Cache de Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Modelos entrenados: se regeneran con `python entrenar_modelo.py` (33-35 MB cada uno)
+*.pkl
+
+# Backups con fecha: son copias byte a byte de archivos que ya se versionan
+*_backup_*
+
+# Exportaciones comprimidas de los notebooks (el .ipynb ya se versiona)
+prueba_*.zip
