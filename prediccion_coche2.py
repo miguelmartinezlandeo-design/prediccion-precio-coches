@@ -32,7 +32,19 @@ model = st.selectbox("Seleccione el modelo del coche", modelos_disponibles)
 transmision = st.selectbox("Seleccione el tipo de transmisión", ["Manual", "Automatic", "Semi-Auto"])
 combustible = st.selectbox("Seleccione el tipo de combustible",  ["Diesel", "Petrol", "Hybrid", "Electric", "Other"])
 st.subheader("💰Datos Numéricos")
-year = st.slider("Seleccione el año del coche", min_value=1990, max_value=2025, value=2020)
+# Rangos y valores tomados del dataset limpio: la app no debe ofrecer ninguna
+# combinacion que el modelo no haya visto nunca.
+ANIO_MIN, ANIO_MAX = int(df["year"].min()), int(df["year"].max())
+TAMANO_MOTOR_VALORES = sorted(float(v) for v in df["engineSize"].unique())
+CONSUMO_VALORES = sorted(float(v) for v in df["mpg"].unique())
+# El kilometraje maximo real se redondea hacia arriba a multiplo del step del slider.
+KM_MAX = int(np.ceil(df["mileage"].max() / 1000) * 1000)
+# Suelo del kilometraje inicial. El dataset no tiene ninguna fila con mileage == 0 (el minimo
+# real es 4 km), asi que arrancar en 0 km seria un dato que el modelo nunca ha visto. El suelo
+# solo afecta al valor inicial: el slider sigue ofreciendo 0 km a mano.
+KM_MIN_INICIAL = 1000
+
+year = st.slider("Seleccione el año del coche", min_value=ANIO_MIN, max_value=ANIO_MAX, value=ANIO_MAX)
 
 # Valores iniciales derivados del dataset limpio para la combinacion elegida.
 # Cadena de respaldo: modelo+ano+transmision+combustible, luego se van soltando campos.
@@ -54,13 +66,36 @@ grupo = grupo_de_referencia(model, year, transmision, combustible)
 # La moda del motor siempre es un valor real del dataset: multiplo de 0.1, entre 1.0 y 5.0.
 engine_size_inicial = float(grupo["engineSize"].mode().iloc[0])
 # La mediana se redondea a multiplo de 1000 porque el slider avanza en pasos de 1000.
-mileage_inicial = int(round(grupo["mileage"].median() / 1000) * 1000)
+mileage_inicial = max(
+    KM_MIN_INICIAL,
+    int(round(grupo["mileage"].median() / 1000) * 1000)
+)
 combo = f"{model}|{year}|{transmision}|{combustible}"
+# El mpg inicial es la moda del grupo de referencia, igual que el motor: el valor fijo que
+# habia antes (la moda global, 65.7) es irreal para un electrico o un hibrido.
+mpg_inicial = float(grupo["mpg"].mode().iloc[0])
 
-mileage = st.slider("Ingrese el kilometraje del coche", min_value=0, max_value=300000, value=mileage_inicial, step=1000, key=f"mileage_{combo}")
+mileage = st.slider("Ingrese el kilometraje del coche", min_value=0, max_value=KM_MAX, value=mileage_inicial, step=1000, key=f"mileage_{combo}")
 tax = st.slider("Ingrese el impuesto del coche", min_value=0, max_value= 600 , value=150)
-mpg = st.slider("Ingrese el consumo de combustible del coche (mpg)", min_value=0, max_value=250, value=55)
-engine_size = st.slider("Ingrese el tamaño del motor del coche (L)", min_value=0.5, max_value=6.0, value=engine_size_inicial, step=0.1, key=f"motor_{combo}")
+# mpg tiene 90 valores reales distintos, y ningun valor de un rango continuo 0-250 seria real
+# (el 55 clasico no existe en el dataset). Se ofrece el listado real como desplegable, que
+# ademas es buscable.
+mpg = st.selectbox(
+    "Ingrese el consumo de combustible del coche (mpg)",
+    options=CONSUMO_VALORES,
+    index=CONSUMO_VALORES.index(mpg_inicial),
+    format_func=lambda v: f"{v:.1f}",
+    key=f"mpg_{combo}",
+)
+# Solo las 15 cilindradas que existen en el dataset, en vez de un rango continuo 0.5-6.0
+# que dejaba fuera 41 de las 56 posiciones del slider.
+engine_size = st.select_slider(
+    "Ingrese el tamaño del motor del coche (L)",
+    options=TAMANO_MOTOR_VALORES,
+    value=engine_size_inicial,
+    format_func=lambda v: f"{v:.1f}",
+    key=f"motor_{combo}",
+)
 
 def formatear_euros(importe):
     entero, _, decimales = f"{importe:,.2f}".partition(".")

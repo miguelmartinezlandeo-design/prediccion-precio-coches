@@ -15,20 +15,23 @@ británicos.
 **App principal: `prediccion_coche2.py`** (las otras dos, `prediccion_coche.py` y
 `prediccion_coche1.py`, son borradores antiguos y están abandonadas).
 
-> **Última sesión: 2026-10-02.** Bug del espacio inicial corregido, dataset
-> limpio generado, modelo reentrenado y verificado, `AGENTS.md` creado y todo
-> commiteado en `9143a5a`. Retoma desde la sección 12.
+> **Última sesión con cambios: 2026-10-03 (WSL se desconectó a mitad, retomado).**
+> Implementada la **opción B**: los rangos y valores por defecto de los widgets se
+> derivan del dataset limpio, el **`mpg` pasó a ser dinámico** y se puso el suelo
+> `KM_MIN_INICIAL = 1000` que cierra el pendiente de los "0 km". Validado y
+> documentado en la **sección 8 sexies**. **Commiteado** (solo
+> `prediccion_coche2.py` y este `AGENTS.md`, ambos en el HEAD de `main`).
+> Retoma desde la sección 12.
 >
-> **Sesión posterior (2026-10-02, sin commitear):** implementados los **valores
-> iniciales dinámicos** de `mileage` y `engineSize` (opción C del diagnóstico de
-> la sección 9), el **aviso de soporte de datos** (opción D) y el **rediseño de
-> la tabla de coches cercanos** (cambio X). Detalle en las secciones 8 bis,
-> 8 ter y 8 quater. El modelo, el `.pkl` y los hiperparámetros **no se han
-> tocado** en ninguna de las tres.
+> **Sesiones anteriores (2026-10-02):** implementados los **valores iniciales
+> dinámicos** de `mileage` y `engineSize` (opción C), el **aviso de soporte de
+> datos** (opción D), el **rediseño de la tabla de coches cercanos** (cambio X) y
+> el **rango orientativo p5–p95** (opción E). Detalle en las secciones 8 bis, 8 ter,
+> 8 quater y 8 quinquies. El modelo, el `.pkl` y los hiperparámetros **no se han
+> tocado** en ninguna de las cinco.
 >
-> **Los tres cambios están verificados, salvo X** (sección 8 quater), que se
-> aplicó pero **no llegó a probarse** porque la sesión se cortó. Los tres están
-> **sin commitear**.
+> **C, D, X y E están commiteados** (`d918107` y `fa66a19`). X se aplicó sin probar en
+> su momento, pero se validó en la sesión de E.
 
 ---
 
@@ -397,20 +400,21 @@ Por tanto los valores por defecto reales de la app son `Manual + Diesel + 2020`,
 (Por eso los valores iniciales por defecto ahora son **1.0 L y 0 km**, los de
 `Fiesta | 2020 | Manual | Diesel`.)
 
-### Pendiente: los 0 km
+### Pendiente: los 0 km — RESUELTO en la sección 8 sexies
 
-Varias combinaciones dan `mileage_inicial = 0` porque el dataset es de coches
-casi nuevos: las celdas de 2020 tienen kilometraje mediano por debajo de 1.000 km.
-El usuario **decidió expresamente mantenerlo en 0** (es el dato fiel), pero está
-sin estudiar:
+Varias combinaciones dan `mileage_inicial = 0` porque el dataset es de coches casi
+nuevos: las celdas de 2020 tienen kilometraje mediano por debajo de 1.000 km. Aquí
+el usuario **decidió expresamente mantenerlo en 0** (es el dato fiel).
 
-- ¿Es un valor inicial aceptable en la UI para un coche de segunda mano?
-- ¿Debería haber un mínimo (p. ej. `max(1000, ...)`) o un aviso de que el grupo
-  tiene kilometraje muy bajo?
-- Encaja con la **opción B** (derivar los rangos de los sliders de los datos
-  reales) y con la **opción D** (avisar de por qué el grupo está casi vacío).
-
-**No lo cambies sin hablar con el usuario.**
+> **Actualizado 2026-10-03:** este punto ya no está pendiente. Se resolvió junto a
+> la opción B (sección 8 sexies) con `KM_MIN_INICIAL = 1000`: el dataset **no tiene
+> ninguna fila con `mileage == 0`** (mínimo real 4 km), así que arrancar en 0 era
+> ofrecer un valor que el modelo nunca ha visto. El suelo afecta **solo al valor
+> inicial**; el slider sigue ofreciendo 0 km a mano.
+>
+> El argumento que justifica el cambio: el objetivo de los defaults dinámicos es
+> que el usuario arranque en un dato **real**, y 0 km no lo es. Es la misma línea de
+> razonamiento que motivó la opción B entera.
 
 ---
 
@@ -715,7 +719,133 @@ y **es compatible**: se podrían mostrar ambos.
 
 ---
 
-## 9. Problema abierto: precios idénticos con los sliders por defecto
+## 8 sexies. Rangos de los widgets derivados del dataset (2026-10-03) — opción B HECHA Y VALIDADA
+
+**Solo `prediccion_coche2.py`. El modelo, el `.pkl` y los hiperparámetros NO se
+tocaron** (MD5 `72441976dd0ba4ba2f95acc3c3bee3f9` verificado antes y después).
+**Commiteado** en el HEAD de `main` (*"mejoras finales de prediccion y
+documentacion"*).
+
+Cierra las dos últimas tareas abiertas: la **opción B** de la sección 9 y el
+pendiente de los **0 km** del final de la sección 8 bis.
+
+### El principio: la app no debe ofrecer ningún valor que el modelo no haya visto
+
+Antes, tres widgets ofrecían rangos inventados que incluían valores que **no
+existen en ninguna fila** del dataset. Medido (`data-analyst`, 2026-10-03):
+
+| Widget | Antes | Después | Rango fantasma eliminado |
+|---|---|---|---|
+| Año | `slider(1990, 2025)` | `slider(1996, 2020)` | **5 años enteros** (2021-2025 con **0 filas**) y 6 más al inicio |
+| Kilometraje | `slider(0, 300000, step 1000)` | `slider(0, 178000, step 1000)` | 122.000 km por encima del máximo real (177.644) |
+| Motor | `slider(0.5, 6.0, step 0.1)` = 56 posiciones | `select_slider` con las **15** cilindradas reales | **41 de 56 posiciones** no existen (1.9, 2.1, 4.0, 5.5…) |
+| mpg | `slider(0, 250, step 1)`, default **55** | `selectbox` con los **90** valores reales | el propio default era fantasma: **`mpg == 55` son 0 filas** |
+| Tax | `slider(0, 600)`, default 150 | **sin cambios** | el 150 sí existe en el dataset |
+
+Datos verificados: `year` va de **1996 a 2020** (22 años, faltan 14 del rango
+1990-2025). `mileage` mínimo real **4**, máximo **177.644**, y **0 filas con 0 km**.
+`engineSize` tiene **15 valores distintos** (1.0-1.8, 2.0, 2.2, 2.3, 2.5, 3.2, 5.0),
+todos múltiplos de 0.1. `mpg` tiene **90 distintos**, de 20.8 a 201.8.
+
+### El suelo de 1.000 km
+
+```python
+KM_MIN_INICIAL = 1000
+mileage_inicial = max(KM_MIN_INICIAL, int(round(grupo["mileage"].median() / 1000) * 1000))
+```
+
+Solo afecta al **valor inicial**. El slider sigue admitting 0 km a mano. Motivo:
+0 km no existe en el dataset, y el objetivo de los defaults dinámicos es arrancar
+en un dato real. Hay 425 filas por debajo de 1.000 km, así que el suelo no
+imposibilita ningún coche real: solo evita el `0` sin sentido que salía de las
+medianas de los coches casi nuevos de 2020.
+
+### El `mpg` pasó a ser dinámico (decisión del usuario, 2026-10-03)
+
+En una primera versión de este cambio el `mpg` se dejó **fijo** en la moda global
+del dataset (65,7). El usuario pidió hacerlo **dinámico**, igual que el motor:
+
+```python
+mpg_inicial = float(grupo["mpg"].mode().iloc[0])
+mpg = st.selectbox(..., options=CONSUMO_VALORES,
+                   index=CONSUMO_VALORES.index(mpg_inicial),
+                   format_func=lambda v: f"{v:.1f}", key=f"mpg_{combo}")
+```
+
+**Por qué importa:** el `mpg` es el proxy continuo que usa el aviso de soporte D
+(ver la tabla de variables de la sección 8 ter: excluirlo baja la detección del
+100 % al 80 %). Un default de 65,7 para un eléctrico o un V8 degradaba ese aviso.
+Efecto medido en los ejemplos:
+
+| Escenario | mpg antes (fijo) | mpg ahora (dinámico) | Aviso de soporte |
+|---|---|---|---|
+| Fiesta 2020 Manual Diesel | 65,7 | 58,9 | sin aviso → sin aviso |
+| Mustang 2020 Manual Petrol | 65,7 | 22,8 | 🟠 → **sin aviso** |
+| Mondeo 2018 Manual Diesel | 65,7 | 47,1 | sin aviso → sin aviso |
+| Tourneo Custom 2020 Manual Diesel | 65,7 | 44,8 | 🟠 → **sin aviso** |
+| B-MAX 1996 Manual Petrol | 65,7 | 74,4 | 🔴 → 🟠 (sigue avisa) |
+
+O sea: los valores por defecto dejaron de ser inventados **y** el aviso D mide
+mejor, porque por fin se parece al coche que el usuario está describiendo.
+
+### Dónde está en el código
+
+| Ubicación | Qué |
+|---|---|
+| Líneas 35-46 | Constantes: `ANIO_MIN/MAX`, `TAMANO_MOTOR_VALORES`, `CONSUMO_VALORES`, `KM_MAX`, `KM_MIN_INICIAL` |
+| Línea 48 | `year` con rango real, default `ANIO_MAX` (2020, el mismo de antes) |
+| Líneas 70-73 | `mileage_inicial` con el suelo de 1.000 km |
+| Línea 76 | `mpg_inicial` = moda de `mpg` del grupo de referencia |
+| Línea 78 | `mileage` con `max_value=KM_MAX` (178.000) |
+| Líneas 82-89 | `mpg` como `selectbox` de los 90 valores reales, con `key=f"mpg_{combo}"` |
+| Líneas 92-99 | `engine_size` como `select_slider` de las 15 cilindradas reales |
+
+`modelo.predict()` (línea 134), `soporte_datos` y el bloque de la tabla X **no se
+tocaron**.
+
+### Defaults reales de la app después del cambio
+
+`Fiesta · 2020 · Manual · Diesel · 1.000 km · 150 € tax · 58,9 mpg · 1,0 L`.
+El año por defecto **sigue siendo 2020** (era `ANIO_MAX`), así que ese valor no
+cambió respecto a la sección 8 bis.
+
+### Validación
+
+- **AppTest: 0 excepciones** en el arranque, en 23 escenarios interactivos (19 de los
+  22 modelos) y al pulsar 🔮 Calcular precio en todos ellos.
+- **El precio de la UI coincide con `modelo.predict()`** en los 23 escenarios
+  (diferencia máxima 0,005 € = redondeo del formato de euros). Esto confirma que
+  los valores de los widgets llegan bien al DataFrame, incluidos los dos widgets
+  que cambiaron de tipo (`mpg` a `selectbox`, `engine_size` a `select_slider`).
+- **Tabla de coches cercanos: 5 filas** en los 23 escenarios (nunca vacía).
+- **Barrido de las 8.250 combinaciones** (22 modelos × **25 años** × 3
+  transmisiones × 5 combustibles, ya no 36 años): **0 problemas**. Ninguna moda de
+  motor ni de mpg fuera de sus listas de opciones, ningún kilometraje inicial fuera
+  de `[0, 178000]` ni con step inválido, **0 grupos vacíos** (la cadena de respaldo
+  nunca llega a N5).
+- Reparto de niveles de la cadena de respaldo en esas 8.250: **N1 505 · N2 1.370 ·
+  N3 1.301 · N4 5.074 · N5 0**. Los 505 N1 cuadran con las 506 celdas exactas no
+  vacías del dataset: la que falta es `Ranger`, que la app no ofrece (sección 6).
+- **Persistencia**: 123.000 km / 1,6 L / 201,8 mpg sobreviven a un rerun con la
+  misma combinación; al cambiar de modelo los tres se recalculan con `key` nueva.
+- Servidor real: `/healthz` **HTTP 200**, `/` **HTTP 200**, log sin errores.
+- MD5 de `modelo_coches.pkl` sin cambios.
+
+### Limitaciones que siguen vivas (no las arregles sin hablar)
+
+1. **La celda por defecto (`2020 · Manual · Diesel`) solo tiene 23 filas en 5 de los
+   22 modelos.** Para los otros 17, la cadena arranca en N2/N3/N4 y el default es
+   una aproximación. Consecuencia: en los valores por defecto, 17 modelos dan
+   alguna señal de aviso 🔴/🟠. Es una propiedad del dataset (el UK casi no tiene
+   diésel manual de 2020), no un defecto de la app.
+2. **N2 ignora el combustible**, así que un Diésel manual puede arrancar con datos
+   de gasolina (es el caso de `Fiesta | 2020 | Manual | Diesel`, que cae en las 78
+   filas de `Fiesta 2020 Manual **Petrol**`). Es comportamiento buscado: es
+   preferible un modelo adyacente a un `0 filas` que un `IndexError`.
+3. **El `tax` sigue con default fijo 150.** No se ha derivado de los datos; es el
+   único widget que queda fuera del principio de esta sección.
+
+---
 
 **Residuo del bug, NO resuelto, y no es cosa del modelo.**
 
@@ -790,12 +920,12 @@ más parecido. Lo que sí son defectos reales son de la **app**, no del modelo:
 ofrece por defecto una combinación fuera de su propio dataset, y muestra
 `18.297,57 €` con dos decimales para una consulta con 0 filas de apoyo.
 
-### Opciones que quedaron sobre la mesa (C, D y X implementadas)
+### Opciones que quedaron sobre la mesa (todas implementadas)
 
 | # | Opción | Coste |
 |---|---|---|
 | **A** | Aviso de soporte: contar las filas que casan con la combinación y avisar si son 0 | Bajo, usa el `df` ya cargado. **Absorbida por D**, que es la versión robusta |
-| **B** | Rangos de los sliders derivados de los datos (hoy `year` llega a 2025 con 5 años vacíos) | Bajo. **PENDIENTE** |
+| **B** | **Rangos de los widgets derivados de los datos → HECHA** (sección 8 sexies) | — |
 | **C** | **Defaults dependientes de la combinación → HECHA** (sección 8 bis) | — |
 | **D** | **Aviso de soporte por radio en distancia estandarizada → HECHA** (sección 8 ter) | — |
 | **E** | Mostrar rango mín/mediana/máx de los 10 coches cercanos en vez de un punto | Casi cero, reutiliza el dataframe que la app ya calcula. **HECHA en otra forma** (sección 8 quinquies: rango de los 200 árboles, no de los coches cercanos) |
@@ -810,7 +940,7 @@ justo lo que está descartado.
 > las opciones A–G**: fue una petición posterior del usuario para acotar la tabla
 > de coches cercanos a una banda de ±10 %.
 
-**Pendientes reales: solo B.** No necesita tocar el modelo.
+**Pendientes reales: ninguno.** B se hizo el 2026-10-03 (sección 8 sexies).
 
 **Impacto medido de C + D sobre el síntoma original:** con los defaults dinámicos
 de C, la configuración real de la app (`2020 · Manual · Diesel`) da **22 precios
@@ -845,38 +975,44 @@ como aviso de error.
 
 ## 11. Estado de Git
 
-### Estado real verificado (2026-10-02)
+### Estado real verificado (2026-10-03, tras el cierre de sesión)
 
 | Dato | Valor |
 |---|---|
-| Rama | `main`, **al día con `origin/main`** (0 ahead, 0 behind) |
-| HEAD | `0528228` |
-| Staging | **Vacío.** No hay nada en el índice |
-| Sin commitear | `Modulo11/AGENTS.md`, `Modulo11/prediccion_coche2.py`, `Modulo11/mejorar_pred.md` |
+| Rama | `main` |
+| HEAD | el commit *"mejoras finales de prediccion y documentacion"* (opción **B** + documentación de este fichero). Su hash está en `git log` |
+| Working tree | **Limpio.** Sin nada sin commitear |
+| `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9` |
 
 Historial reciente:
 
 ```
+(HEAD)  mejoras finales de prediccion y documentacion   <- opción B + mpg dinámico + suelo de 1.000 km
+fa66a19 añadir rango orientativo de predicción          <- opción E (rango p5-p95)
+d918107 si vamos a mejorar la predicción del coche, ... <- C, D y X
 0528228 chore: ignore Modulo12 (independent repo)
 e14039d commit message here
-8421afc Corrige el estado de Git en AGENTS.md: Modulo10 ya versionado por el usuario
-b260e6d Actualiza AGENTS.md con el estado de Git tras el commit 9143a5a
-a0881d1 si hacerlo
-9143a5a Corrige el bug que hacia que todos los coches valieran 18.032,07 €
 ```
 
-Los tres ficheros sin commitear corresponden a: **C** (defaults dinámicos), **D**
-(aviso de soporte) y **X** (tabla de coches cercanos) en `prediccion_coche2.py`;
-la documentación de esos tres cambios y las reglas nuevas en `AGENTS.md`; y la
-sección de proporcionalidad en `mejorar_pred.md`. **Ninguno requiere tocar el
-modelo ni los datasets.**
+**Lo que estaba pendiente y ahora está commiteado:** la **opción B** de la sección 9
+(rangos de los widgets derivados del dataset), el **`mpg` dinámico** y el suelo
+`KM_MIN_INICIAL = 1000` que cierra el pendiente de los 0 km. Todo en
+`prediccion_coche2.py`, más la sección 8 sexies y las correcciones de las secciones
+1, 8 bis, 9 y 12 de este fichero.
 
-### Corrección 2026-10-02
+`_antes_F.py` (copia de seguridad del fichero antes de la opción B) se ha
+**borrado**: nunca estuvo versionado y la versión anterior ya está en `fa66a19`.
+`git log --oneline` es la fuente de verdad para el hash exacto del HEAD.
 
-La versión anterior de esta sección afirmaba que `main` estaba *"4 commits por
-delante de `origin/main`"*. **Es falso:** el repositorio está sincronizado
-(0 ahead / 0 behind). También se omitían los commits `8421afc`, `e14039d` y
-`0528228`. Estado corregido.
+### Estado anterior (2026-10-02), ya superseded
+
+| Dato | Valor |
+|---|---|
+| HEAD | `0528228` |
+| Sin commitear | `AGENTS.md`, `prediccion_coche2.py`, `mejorar_pred.md` |
+
+Esos tres ficheros correspondían a **C**, **D** y **X** más su documentación.
+**Ninguno requería tocar el modelo ni los datasets.**
 
 ### Historial
 
@@ -909,9 +1045,9 @@ prueba_*.zip
   solo en `Modulo11/`. Por eso el commit `a0881d1` arrastró
   `Modulo10/__pycache__/*.pyc` (ruido). Si vuelve a aparecer basura así, crear
   un `.gitignore` en la raíz con `__pycache__/` y `*.pyc`.
-- **Los tres cambios C, D y X siguen sin commitear**, a la espera de validar X
-  (sección 8 quater). La regla 9 de la sección 10 pide commitear `AGENTS.md` en
-  la misma sesión en que se edita, así que ese commit está pendiente.
+- **Los tres cambios C, D y X están commiteados** (en `d918107`). La regla 9 de la
+  sección 10 pide commitear `AGENTS.md` en la misma sesión en que se edita, así que
+  el commit de la **opción B** y de esta documentación sigue pendiente.
 
 ---
 
@@ -930,14 +1066,15 @@ imposibles), que está diagnosticado; de sus opciones están implementadas:
 
 | Cambio | Sección | Validado | Commiteado |
 |---|---|---|---|
-| **C** — defaults dinámicos | 8 bis | Sí | No |
-| **D** — aviso de soporte | 8 ter | Sí | No |
-| **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | Sí (2026-10-02) | No |
-| **E** — rango orientativo p5–p95 de los 200 árboles | 8 quinquies | Sí | No |
+| **C** — defaults dinámicos | 8 bis | Sí | Sí (`d918107`) |
+| **D** — aviso de soporte | 8 ter | Sí | Sí (`d918107`) |
+| **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | Sí (2026-10-02) | Sí (`d918107`) |
+| **E** — rango orientativo p5–p95 de los 200 árboles | 8 quinquies | Sí | Sí (`fa66a19`) |
+| **B** — rangos de los widgets derivados del dataset | 8 sexies | Sí (2026-10-03) | Sí (HEAD) |
 
-Queda pendiente **B** (rangos de los sliders derivados de los datos), que **sigue
-sin implementar** y no necesita tocar el modelo. Pendiente también de estudiar el
-caso de los **0 km** como valor inicial (final de la sección 8 bis).
+**Ya no queda ninguna opción A–G pendiente, y todo está commiteado.** Los dos
+puntos abiertos que restaban —**B** y el caso de los **0 km** como valor inicial—
+se cerraron juntas el 2026-10-03 con `KM_MIN_INICIAL = 1000`.
 
 > **Nota sobre X:** la sección 8 quater se escribió afirmando que estaba sin
 > validar. Ya se validó (6/6 escenarios, nº de filas ≤ 5) en la misma sesión que
