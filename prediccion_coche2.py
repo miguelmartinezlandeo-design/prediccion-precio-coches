@@ -100,6 +100,17 @@ if st.button("🔮 Calcular precio", type="primary"):
     prediccion = modelo.predict(datos)
     precio_estimado = prediccion[0]
 
+    # Rango orientativo: percentiles 5 y 95 de las 200 predicciones individuales de los
+    # arboles del bosque. NO sustituye a la prediccion del ensemble, que sigue siendo la
+    # de arriba. NO es un intervalo de confianza: mide el desacuerdo entre arboles, que se
+    # estrecha de forma enganosa cuando la consulta se sale del dataset.
+    datos_transformados = modelo.named_steps["preprocesamiento"].transform(datos)
+    predicciones_arboles = np.array([
+        arbol.predict(datos_transformados)[0]
+        for arbol in modelo.named_steps["random_forest"].estimators_
+    ])
+    rango_inferior, rango_superior = np.percentile(predicciones_arboles, [5, 95])
+
     diferencias = (df["price"] - precio_estimado).abs()
     coches_en_rango = diferencias <= precio_estimado * 0.10
     coches_cercanos = (
@@ -114,6 +125,10 @@ if st.button("🔮 Calcular precio", type="primary"):
     with st.container(border=True):
         st.metric("💰 Precio estimado", formatear_euros(prediccion[0]))
         st.caption("Precio orientativo según las características indicadas.")
+        st.caption(
+            f"📊 Rango orientativo: {formatear_euros(rango_inferior)} – "
+            f"{formatear_euros(rango_superior)}"
+        )
 
         similares = soporte_datos(model, year, mileage, mpg, engine_size)
         if similares == 0:

@@ -636,6 +636,85 @@ que hace falta para eso va delegado en `data-analyst` (sección 2).
 
 ---
 
+## 8 quinquies. Rango orientativo (2026-10-02) — opción E HECHA Y VALIDADA
+
+**Solo `prediccion_coche2.py`. +15 líneas, 0 borradas, 0 modificadas. El modelo,
+el `.pkl` y los hiperparámetros NO se tocaron. Sin commit.**
+
+### Qué hace
+
+Debajo del precio estimado se muestra un `st.caption` con el **percentil 5 y el
+percentil 95 de las 200 predicciones individuales de los árboles**:
+
+```
+📊 Rango orientativo: 14.244,60 € – 18.065,63 €
+```
+
+Las predicciones por árbol salen de
+`modelo.named_steps["random_forest"].estimators_`, previa una única llamada a
+`modelo.named_steps["preprocesamiento"].transform(datos)`.
+
+### Dónde está en el código
+
+`prediccion_coche2.py`:
+
+| Ubicación | Qué |
+|---|---|
+| Líneas 103-112 | `transform` + predicción de los 200 árboles + `np.percentile(..., [5, 95])` |
+| Líneas 128-130 | `st.caption` con el rango |
+| Línea 100 | `modelo.predict(datos)` — **sin tocar** |
+| Líneas 114-123 | Bloque X (5 coches cercanos) — **sin tocar** |
+| Líneas 133-150 | Avisos D de soporte — **sin tocar** |
+
+### Las cuatro reglas que hay que respetar si se toca esto
+
+1. **`modelo.predict(datos)` sigue siendo el precio destacado.** La línea 100 no
+   se toca. El rango se calcula aparte y **no** sustituye a la predicción del
+   ensemble por la media de los árboles.
+2. **Se usan p5 y p95, nunca min/max.** El rango se ancla en `precio_estimado`
+   (el del ensemble), no en la media de los árboles.
+3. **El rótulo es "Rango orientativo". NO es un intervalo de confianza** y no debe
+   llamarse así.
+4. **No sustituye a los avisos D.** Ambos conviven: D mide *soporte* (datos
+   cercanos), E mide *dispersión* (desacuerdo entre árboles).
+
+### ⚠️ Limitación importante
+
+**El rango mide la dispersión entre árboles, no el error predictivo.** No es una
+medida completa de lo fiable que es la predicción:
+
+- No cubre el ruido aleatorio (los precios reales están mucho más dispersos de lo
+  que indican los percentiles). Medido: `[p5, p95]` contenía el precio real solo
+  el **71 %** de las veces, frente al 90 % que su nombre sugiere.
+- **Puede ser muy ancho y descentrado con poco soporte.** Con soporte 0 el bosque
+  entero se equivoca de rama a la vez y el rango se dispara.
+- **Se congela en extrapuración.** Comprobado con Fiesta 2015: a partir de ~90.000
+  km la distribución de los 200 árboles es idéntica byte a byte (misma hoja) con
+  soporte 0. El rango muestra entonces una confianza falsa y constante.
+
+Por todo esto el rango **complementa a D, nunca lo reemplaza**, y un rango estrecho
+**no** significa "fiable".
+
+### Validación
+
+- **AppTest: 0 excepciones** en 7 ejecuciones. Servidor real: `/healthz` **HTTP 200**.
+- **El precio estimado NO cambia: 6/6 escenarios bit-idénticos** al baseline
+  capturado antes del cambio (defaults reales, Focus 2018, Mustang 2018, KA 2015,
+  B-MAX 1993, Fiesta 150.000 km).
+- `p5 <= precio estimado <= p95` en los 6.
+- **Avisos D y nº de filas de X idénticos** antes/después: X y D intactos.
+- MD5 de `modelo_coches.pkl` sigue siendo `72441976dd0ba4ba2f95acc3c3bee3f9`.
+
+### ⚠️ No es la opción E original
+
+La opción E de la tabla de la sección 9 pedía un rango **mín/mediana/máx de los
+coches cercanos** (reutilizando el dataframe de la tabla). Lo implementado usa las
+**predicciones de los árboles**, que es otra fuente. Se adoptó porque el
+usuario lo pidió así tras la investigación. El enfoque original sigue sin hacer,
+y **es compatible**: se podrían mostrar ambos.
+
+---
+
 ## 9. Problema abierto: precios idénticos con los sliders por defecto
 
 **Residuo del bug, NO resuelto, y no es cosa del modelo.**
@@ -719,7 +798,7 @@ ofrece por defecto una combinación fuera de su propio dataset, y muestra
 | **B** | Rangos de los sliders derivados de los datos (hoy `year` llega a 2025 con 5 años vacíos) | Bajo. **PENDIENTE** |
 | **C** | **Defaults dependientes de la combinación → HECHA** (sección 8 bis) | — |
 | **D** | **Aviso de soporte por radio en distancia estandarizada → HECHA** (sección 8 ter) | — |
-| **E** | Mostrar rango mín/mediana/máx de los 10 coches cercanos en vez de un punto | Casi cero, reutiliza el dataframe que la app ya calcula. **PENDIENTE** |
+| **E** | Mostrar rango mín/mediana/máx de los 10 coches cercanos en vez de un punto | Casi cero, reutiliza el dataframe que la app ya calcula. **HECHA en otra forma** (sección 8 quinquies: rango de los 200 árboles, no de los coches cercanos) |
 | **F** | Cambiar solo los defaults (paliativo: 2017 + 1.5 L + 45.000 km → 15/22 distintos) | Bajo, pero solo esconde el problema. **Superada por C** |
 | **G** | No llamar al modelo si el soporte es 0 y usar la mediana de los k más cercanos | **Roca `mejorar_pred.md`**, necesita permiso explícito |
 
@@ -729,10 +808,9 @@ justo lo que está descartado.
 
 > **El cambio X (sección 8 quater) no figura en esta tabla porque no es una de
 > las opciones A–G**: fue una petición posterior del usuario para acotar la tabla
-> de coches cercanos a una banda de ±10 %. La **opción E sigue PENDIENTE** y es
-> compatible con X.
+> de coches cercanos a una banda de ±10 %.
 
-**Pendientes reales: solo B y E.** Ninguna de las dos necesita tocar el modelo.
+**Pendientes reales: solo B.** No necesita tocar el modelo.
 
 **Impacto medido de C + D sobre el síntoma original:** con los defaults dinámicos
 de C, la configuración real de la app (`2020 · Manual · Diesel`) da **22 precios
@@ -854,10 +932,36 @@ imposibles), que está diagnosticado; de sus opciones están implementadas:
 |---|---|---|---|
 | **C** — defaults dinámicos | 8 bis | Sí | No |
 | **D** — aviso de soporte | 8 ter | Sí | No |
-| **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | **No** | No |
+| **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | Sí (2026-10-02) | No |
+| **E** — rango orientativo p5–p95 de los 200 árboles | 8 quinquies | Sí | No |
 
-Quedan pendientes **B** (rangos de los sliders derivados de los datos) y **E**
-(rango mín/mediana/máx de los coches cercanos), que **siguen sin implementar** y
-no necesitan tocar el modelo. Pendiente también de estudiar el caso de los
-**0 km** como valor inicial (final de la sección 8 bis) y **validar el cambio X**,
-que es lo único que falta por comprobar antes de commitear.
+Queda pendiente **B** (rangos de los sliders derivados de los datos), que **sigue
+sin implementar** y no necesita tocar el modelo. Pendiente también de estudiar el
+caso de los **0 km** como valor inicial (final de la sección 8 bis).
+
+> **Nota sobre X:** la sección 8 quater se escribió afirmando que estaba sin
+> validar. Ya se validó (6/6 escenarios, nº de filas ≤ 5) en la misma sesión que
+> E. Su texto original se conserva como constancia del estado en el momento en que
+> se aplicó el cambio.
+
+## Auditorías largas y puntos de control
+
+Las auditorías que requieran mucho tiempo deben ejecutarse por fases.
+
+Después de completar cada fase significativa, actualizar AGENTS.md
+con:
+
+- fase completada
+- hallazgos importantes
+- archivos afectados
+- pruebas realizadas
+- fase siguiente
+- estado de la auditoría
+
+Si la sesión se interrumpe, una nueva sesión debe leer primero el
+estado guardado y continuar desde la última fase completada.
+
+NO repetir fases ya documentadas salvo que exista una razón para
+verificar un resultado anterior.
+
+
