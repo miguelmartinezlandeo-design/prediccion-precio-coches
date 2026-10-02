@@ -18,6 +18,17 @@ británicos.
 > **Última sesión: 2026-10-02.** Bug del espacio inicial corregido, dataset
 > limpio generado, modelo reentrenado y verificado, `AGENTS.md` creado y todo
 > commiteado en `9143a5a`. Retoma desde la sección 12.
+>
+> **Sesión posterior (2026-10-02, sin commitear):** implementados los **valores
+> iniciales dinámicos** de `mileage` y `engineSize` (opción C del diagnóstico de
+> la sección 9), el **aviso de soporte de datos** (opción D) y el **rediseño de
+> la tabla de coches cercanos** (cambio X). Detalle en las secciones 8 bis,
+> 8 ter y 8 quater. El modelo, el `.pkl` y los hiperparámetros **no se han
+> tocado** en ninguna de las tres.
+>
+> **Los tres cambios están verificados, salvo X** (sección 8 quater), que se
+> aplicó pero **no llegó a probarse** porque la sesión se cortó. Los tres están
+> **sin commitear**.
 
 ---
 
@@ -56,6 +67,71 @@ salida literal del comando, o verificar después con un script propio.
 
 ---
 
+## 2 bis. Proporcionalidad del análisis
+
+**Regla añadida por el usuario a `mejorar_pred.md` el 2026-10-02 (sin commit).**
+Esta sección recoge fielmente su apartado `⏱️ Proporcionalidad del análisis`,
+que es la fuente de verdad.
+
+El nivel de análisis y validación debe ser **proporcional a la tarea**. Hay dos
+regímenes y no se mezclan.
+
+### Análisis exhaustivo
+
+Utilizar análisis exhaustivo cuando la tarea implique:
+
+- investigar la causa de un problema de datos;
+- detectar anomalías;
+- estudiar la calidad del dataset;
+- comparar modelos;
+- validar hipótesis sobre los datos;
+- tomar decisiones que puedan afectar al modelo;
+- modificar datos de entrenamiento;
+- reentrenar o evaluar un modelo.
+
+En estos casos se debe utilizar `data-analyst` y realizar las comprobaciones
+necesarias.
+
+### Cambios pequeños de código
+
+Para modificaciones localizadas de la aplicación que **ya están especificadas y
+no requieren nuevo análisis de datos**:
+
+- no realizar un análisis exhaustivo del dataset;
+- no ejecutar baterías extensas de pruebas salvo que sean necesarias;
+- modificar únicamente las líneas necesarias;
+- realizar una validación breve y específica del cambio;
+- informar del resultado.
+
+Ejemplos textuales del usuario: cambiar el número de resultados mostrados,
+cambiar un texto de la interfaz, **añadir un caption**, modificar una condición
+ya definida, cambiar una etiqueta, cambiar el formato de presentación.
+
+### Regla importante
+
+**No convertir automáticamente una modificación pequeña de código en una
+auditoría completa del proyecto.** Si la tarea ya tiene una especificación
+concreta y no requiere nuevo análisis de datos, ejecutar únicamente las
+comprobaciones necesarias para verificar ese cambio.
+
+### ⚠️ Relación con la sección 2 (punto abierto)
+
+La sección 2 obliga a delegar en `data-analyst` *"incluso cuando la consulta sea
+sencilla"*. La 2 bis dice *"no realizar un análisis exhaustivo"*. **No se
+contradicen** con esta lectura, que es la que se está aplicando:
+
+- la **delegación** sigue vigente siempre que haya tarea de datos;
+- la **proporcionalidad** decide *cuánto* análisis se hace, no *si* se delega.
+
+O sea: ante un cambio pequeño sin necesidad de datos, la conclusión es que **no
+hay tarea de datos que delegar**, no que haya que delegar un análisis enorme.
+
+**Pendiente de confirmar con el usuario** si esta es la interpretación que
+quiere, o si la proporcionalidad debe prevalecer sobre la delegación en los
+casos triviales.
+
+---
+
 ## 3. Arquitectura y ficheros
 
 ```
@@ -75,7 +151,7 @@ modelo_coches.pkl                    El que carga la app. Backup en modelo_coche
 | `prediccion_coche2.py` | La app. Carga el PKL y el CSV limpio. |
 | `limpiar_datos.py` | Función `limpiar(df)` (R1..R6) + `__main__` que escribe el CSV limpio e imprime informe. |
 | `entrenar_modelo.py` | Reentrena, compara 3 escenarios y hace la prueba funcional. Escribe `modelo_coches_nuevo.pkl` (no toca el de la app). |
-| `mejorar_pred.md` | Peticiones originales de mejora de la UI + la regla de delegación. |
+| `mejorar_pred.md` | Peticiones originales de mejora de la UI + la regla de delegación + la regla de proporcionalidad (sección 2 bis). |
 | `modelo_coches_backup_20261002_005315.pkl` | Backup del modelo con el bug (scikit-learn 1.9.0). |
 | `used_car_price_analysis_backup_20261002_005316.csv` | Backup del CSV original. |
 
@@ -217,8 +293,346 @@ Solo **2 líneas**, el resto de la app intacto:
 
 2. `st.selectbox(..., modelos_disponibles)` en lugar de la lista fija de 9.
 
-La UI (precio destacado, tabla "Datos del coche", 10 coches más cercanos) **no se
-toca** salvo que el usuario lo pida.
+> **Corrección 2026-10-02:** el párrafo original decía que la UI no se tocaba,
+> mentioning que la tabla de coches cercanos quedaba intacta. **Eso ya no es
+> cierto:** desde el commit `9143a5a` la tabla de coches cercanos **sí se ha
+> modificado** (cambio X, sección 8 quater) y ahora muestra 5 coches filtrados
+> dentro del ±10 % en lugar de 10 sin filtro. El precio destacado y la tabla
+> "Datos del coche" **siguen sin tocarse**.
+
+---
+
+## 8 bis. Defaults dinámicos de `mileage` y `engineSize` (2026-10-02)
+
+**Opción C del diagnóstico de la sección 9. Solo código de la app. El modelo, el
+`.pkl` y los hiperparámetros NO se tocaron.**
+
+| Fichero | Cambio |
+|---|---|
+| `prediccion_coche2.py` | +26 líneas, 2 modificadas. Ningún otro fichero. |
+
+El MD5 de `modelo_coches.pkl` sigue siendo `72441976dd0ba4ba2f95acc3c3bee3f9`
+(fecha `Oct 2 01:07`), o sea que no hubo reentrenamiento.
+
+### Qué hace
+
+Insertado en `prediccion_coche2.py:27-48`, **entre el slider del año (línea 25) y
+el del kilometraje**, porque es el primer punto donde ya están leídos `model`,
+`transmision`, `combustible` (líneas 21-23) y `year`.
+
+La función `grupo_de_referencia(modelo, anio, trans, comb)` busca en `df` (el CSV
+limpio que la app ya carga en la línea 9) con esta **cadena de respaldo**, y se
+queda con el primer nivel no vacío:
+
+| Nivel | Filtro |
+|---|---|
+| N1 | `(model, year, transmission, fuelType)` |
+| N2 | `(model, year, transmission)` |
+| N3 | `(model, transmission, fuelType)` |
+| N4 | `(model)` |
+| N5 | dataset completo (red de seguridad, nunca se ha necesitado) |
+
+- `engine_size_inicial` = **moda** de `engineSize` del grupo.
+- `mileage_inicial` = **mediana** de `mileage` del grupo, redondeada a múltiplo de
+  1000 porque el slider avanza en pasos de 1000. El 84% de las medianas no son
+  múltiplos de 1000, así que el redondeo es **obligatorio**, no cosmético.
+
+### El `key` dinámico es imprescindible
+
+```python
+combo = f"{model}|{year}|{transmision}|{combustible}"
+mileage     = st.slider(..., value=mileage_inicial,  key=f"mileage_{combo}")
+engine_size = st.slider(..., value=engine_size_inicial, key=f"motor_{combo}")
+```
+
+El parámetro `value=` de un widget **solo se aplica la primera vez** que Streamlit
+lo dibuja. Sin `key` dinámica los sliders no se moverían al cambiar el modelo y el
+cambio sería inútil. Con la clave derivada de la tupla, cuando esa tupla cambia
+Streamlit ve un widget nuevo y lo inicializa al valor recién calculado.
+
+**Consecuencia para el usuario:** si mueve un slider a mano, **su valor se
+conserva** mientras no cambie la combinación `(modelo, año, transmisión,
+combustible)`. Verificado: 123.000 km sobreviven a un rerun; al cambiar a otro
+modelo los dos sliders se recalculan. Las claves viejas quedan inertes en
+`session_state` (memoria despreciable, no se limpian).
+
+### Validación realizada
+
+- **Arranque:** servidor levantado, `/healthz` responde 200.
+- **`AppTest` de `streamlit.testing.v1`** (ejecuta el script y captura
+  excepciones, a diferencia de `curl` que solo sirve la cáscara HTML):
+  **0 excepciones** en las 12 pruebas y también al pulsar 🔮 Calcular precio.
+- **Barrido de las 11.880 combinaciones** (22 modelos × 36 años × 3
+  transmisiones × 5 combustibles): **0 grupos vacíos** y **0 valores fuera de
+  rango** de los sliders. Ninguna moda de motor fuera de `[0.5, 6.0]` ni no
+  múltiplo de 0.1; ninguna mediana redondeada fuera de `[0, 300000]` (rango real
+  observado `[0, 143000]`; el `mileage` máximo del dataset es 177.644).
+- **12 escenarios reales validados 12/12**, incluidos los que fuerzan el
+  fallback:
+
+  | Combinación | Filas | Nivel | Resultado |
+  |---|---|---|---|
+  | Fiesta 2020 Manual Petrol | 78 | N1 | 1.0 L / 0 km |
+  | Focus 2020 Manual Petrol | 31 | N1 | 1.0 L / 1.000 km |
+  | Mustang 2020 Manual Petrol | 4 | N1 | 5.0 L / 0 km |
+  | Mondeo 2018 Manual Petrol | 5 | N1 | 1.5 L / 25.000 km |
+  | KA 2020 Automatic Hybrid | 197 | **N3** | 1.2 L / 33.000 km |
+  | Galaxy 2020 Manual Hybrid | 227 | **N4** | 2.0 L / 29.000 km |
+  | Fiesta 2024 Semi-Auto Electric | 6.508 | N4 | 1.0 L / 18.000 km |
+  | Escort 1990 Manual Petrol | 1 | N4 | 1.8 L / 50.000 km |
+  | S-MAX 2025 Semi-Auto Other | 294 | N3 | 2.0 L / 28.000 km |
+  | Streetka 2015 Automatic Diesel | 2 | N3 | 1.6 L / 69.000 km |
+  | B-MAX 1993 Manual Petrol | 183 | **N3** | 1.0 L / 26.000 km |
+
+### Corrección importante: el combustible por defecto es **Diesel**
+
+El `selectbox` de la línea 23 empieza por `"Diesel"`:
+
+```python
+combustible = st.selectbox("...", ["Diesel", "Petrol", "Hybrid", "Electric", "Other"])
+```
+
+Por tanto los valores por defecto reales de la app son `Manual + Diesel + 2020`,
+**no** `Petrol`. Cualquier análisis futuro que asuma `Petrol` se equivocará.
+(Por eso los valores iniciales por defecto ahora son **1.0 L y 0 km**, los de
+`Fiesta | 2020 | Manual | Diesel`.)
+
+### Pendiente: los 0 km
+
+Varias combinaciones dan `mileage_inicial = 0` porque el dataset es de coches
+casi nuevos: las celdas de 2020 tienen kilometraje mediano por debajo de 1.000 km.
+El usuario **decidió expresamente mantenerlo en 0** (es el dato fiel), pero está
+sin estudiar:
+
+- ¿Es un valor inicial aceptable en la UI para un coche de segunda mano?
+- ¿Debería haber un mínimo (p. ej. `max(1000, ...)`) o un aviso de que el grupo
+  tiene kilometraje muy bajo?
+- Encaja con la **opción B** (derivar los rangos de los sliders de los datos
+  reales) y con la **opción D** (avisar de por qué el grupo está casi vacío).
+
+**No lo cambies sin hablar con el usuario.**
+
+---
+
+## 8 ter. Aviso de soporte de datos (2026-10-02) — opción D HECHA
+
+**Solo `prediccion_coche2.py`. El aviso es puramente informativo: no cambia la
+predicción, ni el modelo, ni el `.pkl`, ni los hiperparámetros. Sin commit.**
+
+### Por qué no sirve la celda exacta
+
+La definición obvia "nº de coches con `(model, year, transmission, fuelType)`
+exactos" está vacía en el **95,75 %** de las 11.880 combinaciones que la app
+ofrece. Daría el aviso en casi todo. Las medidas por ventana tampoco valen:
+bajan los ceros al 0,41 % pero **mienten**, porque al caer al modelo entero le
+dicen a un Edge que tiene 148 coches de apoyo cuando ninguno es de ese modelo.
+Midiendo su recall como detector del colapso, esa medida da **≤ 46,7 %**: la
+peor de todas.
+
+### La medida que sí funciona: radio en distancia estandarizada
+
+> `soporte` = nº de coches del **mismo `model`** a distancia estandarizada
+> **≤ 2 desviaciones típicas** en `(year, mileage, mpg, engineSize)`.
+
+Es decir, un radio de **±4,05 años · ±38.831 km · ±20,3 mpg · ±0,85 L**.
+`RADIO_SOPORTE = 4.0` porque es el radio al cuadrado.
+
+**Variables, y por qué las otras no entran:**
+
+| Variable | ¿Entra? | Motivo medido |
+|---|---|---|
+| `model` | **Sí, exacto** | Es la que más determina el precio. Sin ella la medida no significa nada |
+| `year` | **Sí** | La de mayor peso: 1 año cuesta 0,49 unidades, 5× más que 1 mpg |
+| `mileage` | **Sí** | El radio de 2 sd ≈ el rango km realista entre coches del mismo modelo y año |
+| `mpg` | **Sí** | Su default **55 no existe en el dataset (0 filas)**. Y hace de proxy continuo de motor+combustible: **excluirlo baja la detección del 100 % al 80 %** |
+| `engineSize` | **Sí** | |
+| `transmission` | **No** | Mantenerlo exacto es lo que produce el 95 % de ceros |
+| `fuelType` | **No** | Ídem; `mpg` y `engineSize` ya lo filtran de forma continua |
+| `tax` | **No** | Aporta **0,00** de F1. Redundante con `year`+`fuelType` (el impuesto UK sale del CO₂) |
+
+Soltar `transmission` y `fuelType` **no pierde información**: un Fiesta 2019
+_manual_diésel_ de 1.0 L es una referencia perfectamente válida para un Fiesta
+2020_manual_diésel_ de 1.0 L. Un aviso que saltara ahí sería ruido.
+
+### Los cuatro niveles y los mensajes exactos
+
+| Nivel | Condición | % de las 11.880 combinaciones | Renderizado |
+|---|---|---|---|
+| 🔴 Sin soporte | `== 0` | 65,8 % | `st.warning` |
+| 🟠 Muy poco | `0 < soporte < 5` | 6,9 % | `st.warning` |
+| 🟡 Limitado | `5 <= soporte < 30` | 7,2 % | `st.info` |
+| ⚪ Sin aviso | `>= 30` | 20,1 % | nada, solo el caption original |
+
+Mensajes literales que muestra la app:
+
+```
+🔴 No hay ningún {model} parecido a esta configuración en los datos de origen
+   (0 coches en un radio de ±4 años, ±38.000 km, ±20 mpg y ±0,85 L).
+   El precio es una estimación poco fiable.
+
+🟠 Solo {soporte} coche similar / coches similares en los datos de origen.
+   El precio estimado es frágil.
+
+🟡 Apoyado en solo {soporte} coches similares. Úsalo como orden de magnitud.
+```
+
+**El corte que importa es 30, no 5.** Con umbral 5 se detecta el 86,7 % de los
+casos problemáticos; con 30, el **100 %**, y **sin introducir ni un solo falso
+positivo** en las 88 combinaciones de control con ≥30 coches en su celda exacta.
+
+### Dónde está en el código
+
+`prediccion_coche2.py`:
+
+| Ubicación | Qué |
+|---|---|
+| Línea 2 | `import numpy as np` |
+| Líneas 19-27 | Precomputado: `_media_soporte`, `_desv_soporte`, `_Z_soporte`, `_modelos_soporte`, `RADIO_SOPORTE = 4.0` |
+| Líneas 74-85 | Función `soporte_datos(modelo, anio, kilometraje, consumo, motor)` |
+| Líneas 115-133 | Los tres niveles, **dentro del `st.container` del precio, justo debajo del caption de la línea 113** |
+
+Coste: **1,74 ms** por consulta (17.811 filas × 4 variables estandarizadas).
+
+### Validación realizada
+
+- **AppTest: 0 excepciones en 22 ejecuciones.**
+- **Predicción bit-idéntica:** se capturó una línea base de 15 escenarios con el
+  `repr()` del float **antes** de tocar nada, y se repitió después.
+  **15/15 predicciones bit-idénticas.** Ejemplos: Fiesta 2020 → `15853.736536803153`,
+  Mustang 2020 → `33325.23651838236`, KA 2020 → `15684.600684125182`.
+- **`modelo.predict()` no fue modificado.** Tampoco los sliders, sus defaults
+  dinámicos, la tabla ni el layout.
+  - **Corrección 2026-10-02:** esta validación se hizo **antes** del cambio X. La
+    tabla de coches cercanos **sí se modificó después** (sección 8 quater). Lo
+    que no se ha modificado en ningún momento es `modelo.predict()` ni el
+    cálculo de `soporte_datos`.
+- Un caso verificado por nivel:
+
+  | Nivel | Escenario | Soporte | UI |
+  |---|---|---|---|
+  | 🔴 | B-MAX 1993 Manual Petrol | 0 | 1 warning |
+  | 🟠 singular | EcoSport 2010 Manual Petrol | 1 | 1 warning |
+  | 🟠 plural | C-MAX 2010 Automatic Petrol | 4 | 1 warning |
+  | 🟡 | Tourneo Custom 2020 Manual Diesel | 14 | 1 info |
+  | ⚪ | B-MAX 2015 Manual Diesel | 230 | sin aviso |
+  | ⚪ | Fiesta 2020 Manual Diesel | 3.245 | sin aviso |
+
+- Arranque del servidor OK, `/` responde HTTP 200.
+- El MD5 de `modelo_coches.pkl` sigue siendo `72441976dd0ba4ba2f95acc3c3bee3f9`.
+
+### Lo que el aviso revela sobre la calidad de la predicción
+
+Medido sobre las 11.880 combinaciones, comparando la predicción con la media de
+los 30 coches más cercanos del mismo modelo:
+
+| Soporte | Nº combinaciones | Desviación mediana | Error > 50 % |
+|---|---|---|---|
+| **0** | 7.820 | **65,2 %** | 63,4 % |
+| 1-4 | 823 | 40,9 % | 31,5 % |
+| 5-29 | 855 | 36,2 % | 10,3 % |
+| **≥ 30** | 2.382 | **6,6 %** | **2,1 %** |
+
+Gradiente de **10×**. En los valores por defecto reales de la app saldrían
+**9 modelos con aviso, 7 de ellos en rojo** (KA, Mustang, Fusion, Streetka,
+Transit Tourneo, Escort, Ranger), todos con 1-4 filas en su celda.
+
+**Advertencia metodológica importante:** el mismo test ejecutado sobre las
+**17.811 filas reales** del dataset **NO** muestra relación entre soporte y error
+(MAE 680-883 € en todos los tramos). No es contradictorio: una fila real siempre
+tiene vecinos por construcción, así que ese test **no puede medir
+extrapolación**. Solo la consulta sintética que puede construir el usuario la
+revela. Ambas cosas son ciertas: **el modelo es fiable dentro de la nube de
+datos y no lo es fuera**. Y la circularidad es parcial: cuando el soporte es 0,
+la propia referencia (los 30 más cercanos) está lejos.
+
+### 🔸 Coste de diseño asumido
+
+El aviso saldría en el **65 %** de las combinaciones que ofrece la app. Y es
+correcto: **14 de los 36 años del slider no tienen ni una fila** (faltan 1997,
+1999 y 2001 dentro del propio rango del dataset). Un aviso que saltara el 20 %
+de las veces estaría mintiendo. La solución de fondo es la **opción B**, no relajar
+el umbral.
+
+---
+
+## 8 quater. Rediseño de la tabla de coches cercanos (2026-10-02) — cambio X
+
+**Solo `prediccion_coche2.py`. NO toca `modelo.predict()`, ni el `.pkl`, ni los
+hiperparámetros, ni ningún dataset. Sin commit y, de momento, SIN validar.**
+
+**Este cambio NO es la opción E** de la sección 9. E pedía mostrar un **rango
+mín/mediana/máx** de los coches cercanos y sigue **PENDIENTE**. Lo aplicado aquí
+es otra cosa: **acotar la tabla a una banda de precio alrededor de la
+predicción**. Son compatibles: se podrían mostrar ambos.
+
+### Qué hace
+
+| Antes (commit `9143a5a`) | Ahora |
+|---|---|
+| `df.assign(diferencia=...).sort_values("diferencia").head(10)` | Filtro previo `coches_en_rango` |
+| Los **10** más próximos en valor absoluto, **sin banda de precio** | Máximo **5**, y solo los que caen **dentro del ±10 %** del precio estimado |
+| `sort_values("diferencia")` (desempate no determinista) | `sort_values("diferencia", kind="stable")` |
+| Subtítulo "10 coches más cercanos al precio estimado" | "5 coches más cercanos al precio estimado (±10 %)" |
+| Sin caption | `st.caption` con el nº de coches de la banda cuando salen menos de 5 |
+
+El cambio de comportamiento real es el **filtro de banda**: antes la tabla
+mostraba los 10 coches más cercanos **aunque algunos estuvieran lejos** del
+precio estimado; ahora la lista está acotada a la banda.
+
+### Comportamiento exacto
+
+1. Se calculan las diferencias absolutas `|price − precio_estimado|`.
+2. Se filtran las filas con `diferencia <= precio_estimado * 0.10`.
+3. Se ordenan por `diferencia` ascendente.
+4. Se toman las **5 primeras**.
+5. Si dentro de la banda había **menos de 5**, se muestran las que haya (puede
+   ser 0, 1, 2, 3 o 4) y sale un caption adicional indicando cuántas hay en
+   total y el intervalo de precio de la banda.
+
+`kind="stable"` no cambia el criterio de orden, solo hace **determinista el
+desempate**: a igual `diferencia` se mantiene el orden original de las filas del
+dataset, de modo que la tabla no cambia entre ejecuciones ni entre reruns.
+
+La banda es **multiplicativa y centrada en la predicción**, no en la mediana:
+de `precio_estimado * 0.90` a `precio_estimado * 1.10`. El caption imprime
+justamente ese intervalo.
+
+**Caso límite que el código contempla:** si la banda está vacía, la tabla se
+renderiza **sin filas** y el caption muestra `"Solo 0 coches del dataset están
+dentro del ±10 % del precio estimado (… € - … €)"`. Es un caso **posible pero no
+medido** (ver abajo), y encaja mal con la sección 8 ter: los casos de soporte 0
+son precisamente los que más probabilidades tienen de caer fuera de la banda.
+
+### Dónde está en el código
+
+`prediccion_coche2.py`:
+
+| Ubicación | Qué |
+|---|---|
+| Líneas 103-104 | `diferencias` y `coches_en_rango = diferencias <= precio_estimado * 0.10` |
+| Líneas 105-112 | `coches_cercanos`: `.loc[coches_en_rango]` → `sort_values("diferencia", kind="stable")` → `.head(5)` |
+| Línea 152 | Subtítulo con "5 coches" y "±10 %" |
+| Líneas 153-164 | `st.dataframe` **sin** cambios (mismo `column_config` y `hide_index=True`) |
+| Líneas 165-171 | `st.caption` **nuevo**, solo si `len(coches_cercanos) < 5` |
+
+La llamada al modelo (línea 100, `prediccion = modelo.predict(datos)`) y el
+cálculo de `soporte_datos` (líneas 118-135) **no se han tocado**.
+
+### ⚠️ Sin validar
+
+Esta sección describe **lo que hace el código, leído**. En la sesión en que se
+aplicó el cambio **no llegó a ejecutarse ninguna prueba**: la sesión se cortó.
+Por tanto **no existe**:
+
+- ningún `AppTest` ni verificación de arranque del servidor,
+- ninguna captura de línea base de `modelo.predict()` antes/después (aunque la
+  línea 100 no se modificó, no está verificado que el resto no lo altere),
+- **ninguna medición de cuántas combinaciones de la app muestran 0 coches en la
+  banda**, que es justo el dato que decidiría si una tabla de 5 filas es útil
+  o si degenera en tabla vacía con frecuencia.
+
+Antes de dar esto por bueno hay que medirlo. El recuento de filas del dataset
+que hace falta para eso va delegado en `data-analyst` (sección 2).
 
 ---
 
@@ -226,7 +640,8 @@ toca** salvo que el usuario lo pida.
 
 **Residuo del bug, NO resuelto, y no es cosa del modelo.**
 
-Con los valores por defecto de la app (2020, 45.000 km, 2.0L, Manual, Petrol)
+Con los valores por defecto de la app (**2020, 45.000 km, 2.0L, Manual, y
+combustible = `Diesel`**, ver la corrección en la sección 8 bis)
 14 de 22 modelos devuelven **exactamente el mismo precio**.
 
 - **Causa:** esa combinación **no existe en el dataset — 0 filas**. El árbol no
@@ -241,13 +656,98 @@ Con los valores por defecto de la app (2020, 45.000 km, 2.0L, Manual, Petrol)
   (mediana 4.996), S-MAX 2017 → 17.926 € (mediana 17.925).
 
 **Si el usuario se queja de precios iguales:** explícale que solo ocurre con
-combinaciones imposibles, y **no cambies los hyperparameters por su cuenta**.
+combinaciones imposibles, y **no cambies los hyperparameters por tu cuenta**.
+
+> **Ojo, esta medición es anterior a la sección 8 bis.** El "14 de 22" se midió
+> con los valores por defecto antiguos (2.0 L / 45.000 km). Con los defaults
+> dinámicos de ahora la combinación por defecto es otra, así que el número
+> exacto puede haber cambiado. Lo que no cambia es el diagnóstico de abajo: el
+> mecanismo es falta de soporte, no el modelo.
+
+### 9 bis. Diagnóstico detallado (2026-10-02, solo lectura, sin reentrenar)
+
+Medido recorriendo los 200 árboles del modelo con los valores por defecto:
+
+| Métrica | Valor |
+|---|---|
+| Profundidad media de la hoja alcanzada | **9-10** (de un máximo de 20) |
+| Árboles que llegan a profundidad 20 | **0 de 200** |
+| Nº de filas de entrenamiento en esa hoja | **mediana 6, máximo 14** |
+
+Consecuencias:
+
+1. **`max_depth=20` NO es el culpable.** El nodo para porque tiene **menos de 15
+   filas**, es decir por `min_samples_split=15`. Por eso bajar ese hiperparámetro
+   no lo arregla: aunque bajara, el nodo tiene 1-14 filas y **ninguna es de esos
+   modelos**.
+2. **Los 15 modelos colapsados recorren literalmente los mismos nodos en los 200
+   árboles.** El árbol nunca corta por `modelo` en esa rama (aunque sí hay cortes
+   por `modelo`, el árbol 0 tiene uno en profundidad 2), así que el bit one-hot
+   del modelo es irrelevante para el recorrido. Misma hoja → misma media →
+   mismo número.
+3. Solo hay **8 precios distintos entre 22 modelos**: 18.297,57 € ×15, Focus
+   18.733,40, Kuga 18.016,46, Mondeo 18.070,62, Edge 21.811,26, S-MAX 24.558,88,
+   Galaxy 25.065,05, Mustang 27.663,41.
+
+Datos que explican el hueco (los tres defaults estaban fuera de soporte a la vez):
+
+| Hecho medido | Valor |
+|---|---|
+| Coincidencia exacta `(2020, Manual, Petrol)` + 45.000 km + 2.0 L | **0 filas** |
+| Con tolerancia amplia (±0,6 L y ±5.000 km) | **0 filas** |
+| Gasolinas de 2.0 L de 2020 en todo el dataset | **0** (los 25 coches de 2.0 L de 2020 son Diésel/Hybrid) |
+| Motor en `(2020, Manual, Petrol)`: 185 filas | 167 son 1.0 L; salto de 1,5 L a 2,3 L sin nada en medio |
+| Kilometraje en `(2020, Manual, Petrol)` | de 5 a **8.786 km**, mediana 641. El default estaba **5,1× por encima del máximo** |
+| `mpg == 55` exacto | **0 filas** (cuarto desajuste del default) |
+| Años **2021-2025** del slider | **0 filas cada uno** |
+| Coches de 2020 en todo el dataset | 252 filas, kilometraje mediano **708 km** |
+| Modelos de la app que **nunca** han tenido un 2.0 L | **12 de 22** (Mustang incluido: solo 2.3 y 5.0) |
+| Coche real más cercano a los defaults | Focus 2018, 46.286 km, 2.0 L, Manual, Petrol → **15.790 €** |
+| Último año con datos de 2.0 L Manual Petrol | **2018** (144 filas, todas Focus). 2019 tiene 1, 2020 ninguna |
+
+**Veredicto: es el comportamiento matemáticamente correcto, no un bug ni una
+regresión.** Con soporte cero un árbol solo puede devolver el promedio del grupo
+más parecido. Lo que sí son defectos reales son de la **app**, no del modelo:
+ofrece por defecto una combinación fuera de su propio dataset, y muestra
+`18.297,57 €` con dos decimales para una consulta con 0 filas de apoyo.
+
+### Opciones que quedaron sobre la mesa (C, D y X implementadas)
+
+| # | Opción | Coste |
+|---|---|---|
+| **A** | Aviso de soporte: contar las filas que casan con la combinación y avisar si son 0 | Bajo, usa el `df` ya cargado. **Absorbida por D**, que es la versión robusta |
+| **B** | Rangos de los sliders derivados de los datos (hoy `year` llega a 2025 con 5 años vacíos) | Bajo. **PENDIENTE** |
+| **C** | **Defaults dependientes de la combinación → HECHA** (sección 8 bis) | — |
+| **D** | **Aviso de soporte por radio en distancia estandarizada → HECHA** (sección 8 ter) | — |
+| **E** | Mostrar rango mín/mediana/máx de los 10 coches cercanos en vez de un punto | Casi cero, reutiliza el dataframe que la app ya calcula. **PENDIENTE** |
+| **F** | Cambiar solo los defaults (paliativo: 2017 + 1.5 L + 45.000 km → 15/22 distintos) | Bajo, pero solo esconde el problema. **Superada por C** |
+| **G** | No llamar al modelo si el soporte es 0 y usar la mediana de los k más cercanos | **Roca `mejorar_pred.md`**, necesita permiso explícito |
+
+**Descartado:** tocar hiperparámetros (ya demostrado contraproducente), añadir
+features o cambiar a kNN/Gradient Boosting. Eso ya es cambiar el modelo, que es
+justo lo que está descartado.
+
+> **El cambio X (sección 8 quater) no figura en esta tabla porque no es una de
+> las opciones A–G**: fue una petición posterior del usuario para acotar la tabla
+> de coches cercanos a una banda de ±10 %. La **opción E sigue PENDIENTE** y es
+> compatible con X.
+
+**Pendientes reales: solo B y E.** Ninguna de las dos necesita tocar el modelo.
+
+**Impacto medido de C + D sobre el síntoma original:** con los defaults dinámicos
+de C, la configuración real de la app (`2020 · Manual · Diesel`) da **22 precios
+distintos de 22 modelos**, cuando antes eran 8 con 15 colapsados. Barrido de las
+**94 configuraciones** (año × transmisión × combustible con datos): **0 colapsos**.
+O sea que C ya resolvió el síntoma y D quedó como indicador de fiabilidad, no
+como aviso de error.
 
 ---
 
 ## 10. Reglas de trabajo para futuras sesiones
 
 1. **No repitas la auditoría.** Los hallazgos están en las secciones 4 a 7.
+   Y no conviertas un cambio pequeño en una auditoría completa: ver la sección
+   2 bis.
 2. **Antes de reemplazar `modelo_coches.pkl`, crea un backup con fecha:**
    `cp modelo_coches.pkl modelo_coches_backup_$(date +%Y%m%d_%H%M%S).pkl`.
 3. **El CSV original es Sacred.** Se limpia con `limpiar()` hacia un archivo
@@ -265,7 +765,42 @@ combinaciones imposibles, y **no cambies los hyperparameters por su cuenta**.
 
 ---
 
-## 11. Estado de Git (RESUELTO en parte)
+## 11. Estado de Git
+
+### Estado real verificado (2026-10-02)
+
+| Dato | Valor |
+|---|---|
+| Rama | `main`, **al día con `origin/main`** (0 ahead, 0 behind) |
+| HEAD | `0528228` |
+| Staging | **Vacío.** No hay nada en el índice |
+| Sin commitear | `Modulo11/AGENTS.md`, `Modulo11/prediccion_coche2.py`, `Modulo11/mejorar_pred.md` |
+
+Historial reciente:
+
+```
+0528228 chore: ignore Modulo12 (independent repo)
+e14039d commit message here
+8421afc Corrige el estado de Git en AGENTS.md: Modulo10 ya versionado por el usuario
+b260e6d Actualiza AGENTS.md con el estado de Git tras el commit 9143a5a
+a0881d1 si hacerlo
+9143a5a Corrige el bug que hacia que todos los coches valieran 18.032,07 €
+```
+
+Los tres ficheros sin commitear corresponden a: **C** (defaults dinámicos), **D**
+(aviso de soporte) y **X** (tabla de coches cercanos) en `prediccion_coche2.py`;
+la documentación de esos tres cambios y las reglas nuevas en `AGENTS.md`; y la
+sección de proporcionalidad en `mejorar_pred.md`. **Ninguno requiere tocar el
+modelo ni los datasets.**
+
+### Corrección 2026-10-02
+
+La versión anterior de esta sección afirmaba que `main` estaba *"4 commits por
+delante de `origin/main`"*. **Es falso:** el repositorio está sincronizado
+(0 ahead / 0 behind). También se omitían los commits `8421afc`, `e14039d` y
+`0528228`. Estado corregido.
+
+### Historial
 
 **Hecho el 2026-10-02**, commit `9143a5a` *"Corrige el bug que hacia que todos los
 coches valieran 18.032,07 €"*: se versionaron los 18 ficheros de `Modulo11/`
@@ -293,11 +828,12 @@ prueba_*.zip
   commit `a0881d1` *"si hacerlo"* (2026-10-02 01:18). **Ya están versionados**,
   así que el punto anterior queda cerrado.
 - **No hay `.gitignore` en la raíz del repo** (`/home/miguel/mi_entorno/Python`),
-  solo en `Modulo11/`. Por eso ese commit arrastró
+  solo en `Modulo11/`. Por eso el commit `a0881d1` arrastró
   `Modulo10/__pycache__/*.pyc` (ruido). Si vuelve a aparecer basura así, crear
   un `.gitignore` en la raíz con `__pycache__/` y `*.pyc`.
-- La rama `main` está **4 commits por delante de `origin/main`**: no se ha
-  hecho `git push`. Solo si el usuario lo pide.
+- **Los tres cambios C, D y X siguen sin commitear**, a la espera de validar X
+  (sección 8 quater). La regla 9 de la sección 10 pide commitear `AGENTS.md` en
+  la misma sesión en que se edita, así que ese commit está pendiente.
 
 ---
 
@@ -309,7 +845,19 @@ source .venv/bin/activate
 streamlit run prediccion_coche2.py
 ```
 
-Estado: **todo funcionando y verificado**. CSV limpio sincronizado con el PKL,
-app arrancada sin errores, comparativa de métricas hecha. Lo único abierto es el
-punto de la sección 9 (precios idénticos con combinaciones imposibles), que está
-diagnosticado y no conviene tocar sin hablar con el usuario.
+Estado: **funcionando**, con una salvedad importante. CSV limpio sincronizado
+con el PKL, app arrancada sin errores, comparativa de métricas hecha. Lo único
+abierto de fondo es el punto de la sección 9 (precios idénticos con combinaciones
+imposibles), que está diagnosticado; de sus opciones están implementadas:
+
+| Cambio | Sección | Validado | Commiteado |
+|---|---|---|---|
+| **C** — defaults dinámicos | 8 bis | Sí | No |
+| **D** — aviso de soporte | 8 ter | Sí | No |
+| **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | **No** | No |
+
+Quedan pendientes **B** (rangos de los sliders derivados de los datos) y **E**
+(rango mín/mediana/máx de los coches cercanos), que **siguen sin implementar** y
+no necesitan tocar el modelo. Pendiente también de estudiar el caso de los
+**0 km** como valor inicial (final de la sección 8 bis) y **validar el cambio X**,
+que es lo único que falta por comprobar antes de commitear.

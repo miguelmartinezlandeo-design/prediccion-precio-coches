@@ -1,16 +1,38 @@
-## Delegación de tareas
+# Reglas de trabajo del agente principal — Modulo11
+
+Este fichero contiene **reglas de trabajo**, no conocimiento técnico. La
+arquitectura, el diagnóstico del modelo, las métricas, el estado de Git y el
+historial de cambios están en **`AGENTS.md`**, que es la memoria del proyecto.
+Si necesitas un dato técnico, búscalo allí.
+
+> **Nota histórica.** "1. Mostrar el precio de forma destacada" y "2. Mostrar
+> los datos utilizados" fueron peticiones originales del usuario para la
+> interfaz. **Ya están implementadas** desde el commit base. Dejaban de ser
+> reglas activas; se conservan aquí solo como registro de qué se pidió, y la
+> regla que sí subsiste ("no cambies el modelo ni la predicción") está en la
+> sección 1.
+
+---
+
+## 1. Invariantes
+
+- **No cambies el modelo de Machine Learning** ni la forma en que se realiza la
+  predicción, salvo petición explícita del usuario.
+- **No modifiques los hiperparámetros** sin permiso. Ver sección 6.
+- **No toques el dataset** para resolver un problema de interfaz. Ver sección 5.
+- **No repitas auditorías ya hechas.** Los hallazgos están en `AGENTS.md`.
+
+---
+
+## 2. Delegación de tareas de datos
 
 ### REGLA OBLIGATORIA
 
 Toda tarea relacionada con datos debe ser delegada al subagente
-`data-analyst`.
+`data-analyst`. Debes utilizarla **también cuando la consulta sea sencilla**.
+Nunca sustituyas la delegación solo porque la tarea sea fácil.
 
-No analices tú mismo los datos con Pandas, Python u otras herramientas
-si la tarea puede ser realizada por `data-analyst`.
-
-Debes utilizar `data-analyst` incluso cuando la consulta sea sencilla.
-
-Ejemplos:
+Ejemplos, tal como los formuló el usuario:
 
 - "Busca los 5 coches más caros."
 - "¿Cuántos coches hay?"
@@ -20,91 +42,112 @@ Ejemplos:
 - "Busca los coches más cercanos a 16000 €."
 - "Explora el DataFrame."
 
-En todos estos casos debes delegar primero la tarea a `data-analyst`.
+Delega igualmente cuando el usuario pida: analizar un DataFrame, consultar los
+CSV del proyecto, filtrar, ordenar, buscar registros, calcular estadísticas,
+analizar columnas, buscar duplicados o nulos, detectar problemas de calidad de
+datos o preparar datos para gráficos.
 
-El agente principal debe encargarse posteriormente de interpretar,
-explicar y presentar al usuario el resultado recibido.
+### Límites de `data-analyst`
 
-Nunca sustituyas la delegación simplemente porque la tarea sea sencilla.
+- **NO** modifica la aplicación.
+- **NO** ejecuta Streamlit.
+- **NO** entrena modelos. Su función es exclusivamente analizar datos; el
+  entrenamiento y la evaluación los hace el agente principal.
 
-# Mejorar aplicación prediccion_coche2.py
+### Tu papel
 
-Quiero mejorar poco a poco mi aplicación de predicción de precios de coches.
+`data-analyst` realiza el análisis y devuelve los resultados. Tú interpretas,
+explicas y presentas el resultado al usuario, o decides el siguiente paso con
+él. No analices tú mismo lo que puede delegarse.
 
-## 1. Mostrar el precio de forma destacada
+---
 
-La aplicación ya funciona correctamente y no quiero cambiar el modelo de Machine Learning.
+## 3. Resultados del subagente
 
-Cuando el usuario pulse el botón:
+Cuando recibas un resultado de `data-analyst`, conserva su identificación:
 
-🔮 Calcular precio
-quiero que el precio estimado se muestre de una forma más grande y clara.
-
-Por ejemplo:
-💰 Precio estimado
-16.078,87 €
-No cambies el modelo ni la forma en la que se realiza la predicción.
-
-## 2. Mostrar los datos utilizados
-
-Después de mostrar el precio estimado, quiero mostrar un pequeño resumen
-con los datos del coche que el usuario ha introducido.
-
-Por ejemplo:
-
-📋 Datos del coche
-
-Modelo: Kuga
-Año: 2020
-Transmisión: Manual
-Kilometraje: 45.000 km
-Combustible: Diesel
-Impuesto: 150
-MPG: 55
-Tamaño del motor: 2.0
-
-Los datos deben ser exactamente los que el usuario ha seleccionado o
-introducido.
-
-No modificar el modelo de Machine Learning ni la forma en la que se
-realiza la predicción.
-
-Eso sí, cambia la letra. Ponle un estilo mucho más bonito y ponle algún emoticon Para que se vea agradable la vista Además, que esos datos se encuentren dentro de un Bloque Como en un cuadrado Que la cabecera sea Datos del coche Y los demás de abajo En dos celdas Una celda donde estén los títulos y la otra celda al lado, donde estén. Las respuestas
-
-## Delegación de tareas
-
-Utiliza el subagente `data-analyst` para todas las tareas relacionadas
-con el análisis de datos.
-
-Debes delegar automáticamente al `data-analyst` cuando el usuario pida:
-
-- Analizar un DataFrame.
-- Consultar datos en used_car_price_analysis.csv.
-- Filtrar registros.
-- Ordenar datos.
-- Buscar registros.
-- Calcular estadísticas.
-- Analizar columnas.
-- Buscar valores duplicados o nulos.
-- Detectar problemas de calidad de datos.
-- Preparar datos para gráficos.
-
-El `data-analyst` debe realizar el análisis y devolver los resultados.
-
-El agente principal debe utilizar esos resultados para responder al
-usuario o decidir el siguiente paso.
-
-No realices tú mismo una tarea de análisis de datos si puede ser
-delegada al `data-analyst`.
-
-El `data-analyst` no debe modificar la aplicación ni ejecutar
-Streamlit. Su función es exclusivamente analizar los datos.
-
-## Resultados de los subagentes
-
-Cuando recibas un resultado del `data-analyst`, conserva su identificación:
-
+```
 📊 DATA-ANALYST
 🔐 SUBAGENTE EJECUTADO
+```
 
 No elimines ni sustituyas estas dos líneas al presentar el resultado.
+
+---
+
+## 4. ⏱️ Proporcionalidad del análisis
+
+El nivel de análisis y validación debe ser **proporcional a la tarea**. Hay dos
+regímenes y no se mezclan.
+
+**Análisis exhaustivo**, cuando la tarea implique:
+
+- investigar la causa de un problema de datos;
+- detectar anomalías o estudiar la calidad del dataset;
+- comparar modelos o validar hipótesis sobre los datos;
+- tomar decisiones que puedan afectar al modelo;
+- modificar datos de entrenamiento, o reentrenar o evaluar un modelo.
+
+En estos casos se usa `data-analyst` y se hacen las comprobaciones necesarias.
+
+**Cambios pequeños de código**, para modificaciones localizadas que **ya están
+especificadas y no requieren nuevo análisis de datos**:
+
+- no hacer un análisis exhaustivo del dataset;
+- no ejecutar baterías extensas de pruebas salvo que sean necesarias;
+- modificar únicamente las líneas necesarias;
+- hacer una validación breve y específica del cambio;
+- informar del resultado.
+
+Ejemplos: cambiar el número de resultados mostrados, cambiar un texto de la
+interfaz, **añadir un caption**, modificar una condición ya definida, cambiar
+una etiqueta o el formato de presentación.
+
+**Regla importante:** no conviertas automáticamente una modificación pequeña de
+código en una auditoría completa del proyecto.
+
+> **Cómo se aplica junto con la sección 2.** Las dos reglas no se contradicen: la
+> proporcionalidad decide *cuánto* análisis se hace, y la delegación sigue
+> vigente *siempre que haya tarea de datos*. En un cambio pequeño que no
+> requiere datos, la conclusión es que **no hay nada que delegar**, no que haya
+> que delegar un análisis extenso.
+
+---
+
+## 5. Datos protegidos y sincronización
+
+- **El dataset original es sagrado.** Nunca lo sobreescribas ni lo edites. La
+  limpieza se aplica con `limpiar()` y se escribe siempre a un fichero nuevo.
+- Si cambias la lógica de limpieza, hay que **reentrenar**: el dataset limpio y
+  el modelo deben estar siempre sincronizados.
+- Si añades o quitas una columna del dataset, comprueba antes que la app no la
+  lea de forma explícita. Las decisiones ya tomadas sobre qué filas conservar
+  están en `AGENTS.md`: **no las reviertas sin preguntar al usuario**.
+
+---
+
+## 6. Modelo y PKL
+
+- **No cambies los hiperparámetros** sin permiso. Hay evidencia de que
+  empeoran la precisión sin resolver el problema que motivó el cambio.
+- **Reentrenar no significa mejorar.** Antes de dar por bueno un modelo nuevo,
+  compáralo con la referencia de `AGENTS.md` usando la misma partición. Sin esa
+  comparación, un PKL nuevo no se acepta.
+- **Haz un backup con fecha antes de reemplazar el PKL:**
+  `cp modelo_coches.pkl modelo_coches_backup_$(date +%Y%m%d_%H%M%S).pkl`
+- El script de entrenamiento escribe su salida en un PKL aparte, **no** en el que
+  carga la app. **Sustituirlo es un paso explícito y consciente**, nunca un
+  efecto secundario de reentrenar.
+- Si el modelo se reemplaza, verifica después que la app lo carga y arranca sin
+  errores.
+
+---
+
+## 7. Git, commits y estilo
+
+- **No hagas commits** salvo que el usuario lo pida explícitamente.
+- Si editas `AGENTS.md`, commitea el cambio en la misma sesión: es la memoria
+  del proyecto y solo sirve si está en el repo.
+- **Comenta el trabajo en español.**
+- Antes de reemplazar o regenerar un fichero grande, comprueba que no está
+  versionado o que su backup existe.
