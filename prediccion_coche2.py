@@ -218,10 +218,11 @@ if st.button("🔮 Calcular precio", type="primary"):
 
         similares = soporte_datos(model, year, mileage, mpg, engine_size)
         if similares == 0:
+            # Aviso compacto: mismo container st.warning que los niveles naranja y
+            # amarillo, pero en una sola linea en lugar del parrafo largo.
             st.warning(
-                f"No hay ningún {model} parecido a esta configuración en los datos de "
-                f"origen (0 coches en un radio de ±4 años, ±38.000 km, ±20 mpg y ±0,85 L). "
-                f"El precio es una estimación poco fiable."
+                f"⚠️ Soporte de datos bajo: {similares} coches similares "
+                f"encontrados en el dataset."
             )
         elif similares < 5:
             plural = "coche similar" if similares == 1 else "coches similares"
