@@ -76,7 +76,58 @@ combo = f"{model}|{year}|{transmision}|{combustible}"
 mpg_inicial = float(grupo["mpg"].mode().iloc[0])
 
 mileage = st.slider("Ingrese el kilometraje del coche", min_value=0, max_value=KM_MAX, value=mileage_inicial, step=1000, key=f"mileage_{combo}")
-tax = st.slider("Ingrese el impuesto del coche", min_value=0, max_value= 600 , value=150)
+
+# Tax dinámico: N1→N2→N3→N4 con min 3 filas; mediana ajustada al valor real más cercano
+TAX_MIN_FILAS = 3
+tax_inicial = 145.0
+# N1: model + year + transmission + fuelType
+g_n1 = df[
+    (df["model"] == model)
+    & (df["year"] == year)
+    & (df["transmission"] == transmision)
+    & (df["fuelType"] == combustible)
+]
+if len(g_n1) >= TAX_MIN_FILAS:
+    med_n1 = g_n1["tax"].median()
+    unicos_n1 = sorted(g_n1["tax"].unique())
+    idx_n1 = min(range(len(unicos_n1)), key=lambda i: abs(unicos_n1[i] - med_n1))
+    tax_inicial = float(unicos_n1[idx_n1])
+else:
+    # N2: model + year + transmission
+    g_n2 = df[
+        (df["model"] == model)
+        & (df["year"] == year)
+        & (df["transmission"] == transmision)
+    ]
+    if len(g_n2) >= TAX_MIN_FILAS:
+        med_n2 = g_n2["tax"].median()
+        unicos_n2 = sorted(g_n2["tax"].unique())
+        idx_n2 = min(range(len(unicos_n2)), key=lambda i: abs(unicos_n2[i] - med_n2))
+        tax_inicial = float(unicos_n2[idx_n2])
+    else:
+        # N3: model + transmission + fuelType
+        g_n3 = df[
+            (df["model"] == model)
+            & (df["transmission"] == transmision)
+            & (df["fuelType"] == combustible)
+        ]
+        if len(g_n3) >= TAX_MIN_FILAS:
+            med_n3 = g_n3["tax"].median()
+            unicos_n3 = sorted(g_n3["tax"].unique())
+            idx_n3 = min(range(len(unicos_n3)), key=lambda i: abs(unicos_n3[i] - med_n3))
+            tax_inicial = float(unicos_n3[idx_n3])
+        else:
+            # N4: model
+            g_n4 = df[(df["model"] == model)]
+            if len(g_n4) >= TAX_MIN_FILAS:
+                med_n4 = g_n4["tax"].median()
+                unicos_n4 = sorted(g_n4["tax"].unique())
+                idx_n4 = min(range(len(unicos_n4)), key=lambda i: abs(unicos_n4[i] - med_n4))
+                tax_inicial = float(unicos_n4[idx_n4])
+            else:
+                tax_inicial = 145.0
+
+tax = st.slider("Ingrese el impuesto del coche", min_value=0, max_value=600, value=int(round(tax_inicial)), step=5, key=f"tax_{combo}")
 # mpg tiene 90 valores reales distintos, y ningun valor de un rango continuo 0-250 seria real
 # (el 55 clasico no existe en el dataset). Se ofrece el listado real como desplegable, que
 # ademas es buscable.

@@ -1071,15 +1071,57 @@ imposibles), que está diagnosticado; de sus opciones están implementadas:
 | **X** — tabla de coches cercanos acotada al ±10 % | 8 quater | Sí (2026-10-02) | Sí (`d918107`) |
 | **E** — rango orientativo p5–p95 de los 200 árboles | 8 quinquies | Sí | Sí (`fa66a19`) |
 | **B** — rangos de los widgets derivados del dataset | 8 sexies | Sí (2026-10-03) | Sí (HEAD) |
+| **TAX dinámico** — tax inicial por grupo N1–N4 (n≥3), mediana ajustada | 8 septies | Sí (2026-10-03) | **No commiteado aún** |
 
-**Ya no queda ninguna opción A–G pendiente, y todo está commiteado.** Los dos
-puntos abiertos que restaban —**B** y el caso de los **0 km** como valor inicial—
-se cerraron juntas el 2026-10-03 con `KM_MIN_INICIAL = 1000`.
+**Ya no queda ninguna opción A–G pendiente.** Los dos puntos abiertos que restaban —**B** y el caso de los **0 km** como valor inicial— se cerraron juntas el 2026-10-03 con `KM_MIN_INICIAL = 1000`.
 
 > **Nota sobre X:** la sección 8 quater se escribió afirmando que estaba sin
 > validar. Ya se validó (6/6 escenarios, nº de filas ≤ 5) en la misma sesión que
 > E. Su texto original se conserva como constancia del estado en el momento en que
 > se aplicó el cambio.
+
+---
+
+## 8 septies. Tax dinámico (2026-10-03)
+
+**Solo `prediccion_coche2.py`. El modelo, el `.pkl` y los hiperparámetros NO se tocaron** (MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`).
+
+Implementada la propuesta del análisis: valor inicial de `tax` dinámico con la misma cadena de respaldo N1→N2→N3→N4, umbral mínimo **>= 3 filas** por nivel, **mediana ajustada al valor real de `tax` más cercano** (con empate exacto de distancia → menor valor), y **fallback global 145.0**.
+
+### Regla aplicada
+
+1. **N1**: `(model, year, transmission, fuelType)` — si `len(g) >= 3`: `tax_inicial = valor_real_más_cercano_a(mediana(g.tax), g.tax.unique())`; con desempate = menor valor.
+2. **N2**: `(model, year, transmission)` — mismo criterio si n>=3.
+3. **N3**: `(model, transmission, fuelType)` — mismo criterio si n>=3.
+4. **N4**: `(model)` — mismo criterio si n>=3.
+5. **N5 (fallback):** 145.0 (ningún nivel tenía >=3 filas).
+
+### Cambios en código
+
+`prediccion_coche2.py`:
+
+| Ubicación | Qué |
+|---|---|
+| Líneas ~90–128 (bloque de inicialización tras mpg_inicial) | Cálculo de `tax_inicial` con los 4 niveles y fallback 145.0. |
+| Línea ~130 | `tax = st.slider("Ingrese el impuesto del coche", min_value=0, max_value=600, value=int(round(tax_inicial)), step=5, key=f"tax_{combo}")` |
+
+**Notas:** Se usa `int(round(tax_inicial))` para cumplir con el tipo esperado por Streamlit (evita warning de tipo float/int). Se añade **`key=f"tax_{combo}"`** (dinámica). **No se cambia** el rango (0–600) ni `step=5`.
+
+### Validación
+
+- **AppTest:** Sin excepciones al arrancar y ejecutar.
+- **Casos validados:**
+  - `Fiesta 2020 Manual Diesel` → **145** (N1 vacío < 3 → N2 con 78>=3)
+  - `Fiesta 2016 Manual Diesel` → **0** (N1 con 94>=3)
+  - `Mondeo 2016 Automatic Electric` → **125** (N1 2<3 → N2 con 23>=3; **no usa las 2 filas de N1**)
+- **Garantía:** `tax_inicial` es **siempre un valor real** del grupo seleccionado (se elige de `tax.unique()` del nivel que cumple n>=3).
+- **Persistencia:** con `key=f"tax_{combo}"`, el valor manual se conserva mientras no cambia la combinación; al cambiar combinación, se recalcula.
+- **Integración:** C, D, X, E, B, F **intactos**. `modelo.predict()`, pipeline y columnas **sin cambios**.
+- **PKL:** MD5 **72441976dd0ba4ba2f95acc3c3bee3f9** (sin modificar).
+
+### Qué queda pendiente después de Tax dinámico
+
+Tras esta mejora, **no quedan opciones A–G pendientes**. Único punto menor documentado: `tax` sigue siendo un slider con rango 0–600 y 35 valores reales (patrón de "rango fantasma" que ya se corrigió en mpg/engineSize). Esto **no afecta a la predicción** y no requiere implementación ahora.
 
 ## Auditorías largas y puntos de control
 
