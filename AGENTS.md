@@ -49,9 +49,9 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 | Dato | Valor |
 |---|---|
 | Rama | `main` |
-| HEAD | `a4610ee` — *"aviso de soporte rojo compacto y reorganizacion de AGENTS.md"* |
-| Commits sin pushear | **5** (`main` está 5 commits por delante de `origin/main`) |
-| Working tree | **2 ficheros modificados sin commitear:** `AGENTS.md` (contradicción de la regla de commit en §2.4.8-9 y MD5 duplicado en §11.3) y `mejorar_pred.md` (remodelado como documento de reglas de trabajo del agente). Ningún cambio en la app, el dataset ni el PKL |
+| HEAD | `d03bde2` — *"separa el procedimiento del agente en mejorar_pred.md y corrige las reglas de commit"* |
+| Commits sin pushear | **0** (`main` está sincronizado con `origin/main`) |
+| Working tree | **Limpio.** `AGENTS.md` y `mejorar_pred.md` commiteados en `d03bde2` |
 | `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`, fecha `Oct 2 01:07` |
 | CSV original | **Sin tocar.** 17.966 filas |
 | CSV limpio | 17.811 filas |
