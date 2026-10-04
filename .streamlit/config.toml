@@ -23,7 +23,7 @@ headingFontSizes = ["34px", "26px", "20px", "17px", "15px", "13px"]
 headingFontWeights = [700, 600, 600, 600, 500, 500]
 linkUnderline = false
 dataframeBorderColor = "#E2E8F0"
-dataframeHeaderBackgroundColor = "#F8FAFC"
+dataframeHeaderBackgroundColor = "#E2E8F0"
 
 # Colores de estado
 greenColor = "#15803D"

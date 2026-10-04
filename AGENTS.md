@@ -31,30 +31,32 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 
 ## 1. ESTADO ACTUAL
 
-> Verificado el **2026-10-03**; estado de git re-verificado el **2026-10-04**. Si algo de
-> esta sección no cuadra con `git status`, `git log`, `md5sum` o el código, esta sección
-> está mal y hay que corregirla.
+> Verificado el **2026-10-04**. Si algo de esta sección no cuadra con `git status`,
+> `git log`, `md5sum` o el código, esta sección está mal y hay que corregirla.
 
-### 1.1 Última sesión (2026-10-03)
+### 1.1 Última sesión (2026-10-04)
 
-1. **Tax dinámico** (sección 8 septies de la versión anterior de este fichero → §8).
-2. **Aviso 🔴 de soporte compacto**: el mensaje del nivel "sin soporte" se reescribió
-   para que sea **una línea corta** en vez del párrafo largo. Ver §7.3. **Es un cambio
-   intencionado: no lo reviertas.**
-3. **Reorganización de este `AGENTS.md`** (estructura de 12 secciones, estado actual
-   separado del historial).
+1. **Segunda página + navegación** (Dashboard). La app pasa a ser multipágina con
+   `st.navigation` + `st.Page`: 🚗 Predicción y 📊 Dashboard. Ver §6.0 y §8.7.
+   **El Dashboard está vacío a propósito: todavía no tiene ningún gráfico.**
+2. Antes, en la sesión del 2026-10-03: tax dinámico (§8.6), aviso 🔴 compacto (§7.3) y
+   reorganización de este `AGENTS.md`.
 
 ### 1.2 Estado del repositorio
 
 | Dato | Valor |
 |---|---|
 | Rama | `main` |
-| HEAD | `d03bde2` — *"separa el procedimiento del agente en mejorar_pred.md y corrige las reglas de commit"* |
-| Commits sin pushear | **0** (`main` está sincronizado con `origin/main`) |
-| Working tree | **Limpio.** `AGENTS.md` y `mejorar_pred.md` commiteados en `d03bde2` |
+| HEAD | `5d877d3` — *"actualiza el estado de git en AGENTS.md tras el push de d03bde2"* |
+| Commits sin pushear | **0** |
+| Working tree | **Con cambios sin commitear** (esperando autorización del usuario): `prediccion_coche2.py` reescrito como entrypoint, `app_pages/` nuevo, `.streamlit/config.toml` y `.opencode/agents/design-agent.md` |
 | `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`, fecha `Oct 2 01:07` |
 | CSV original | **Sin tocar.** 17.966 filas |
 | CSV limpio | 17.811 filas |
+
+> Los cambios de `.streamlit/config.toml` (`dataframeHeaderBackgroundColor`) y de las
+> `column_config` de la tabla de cercanos **ya estaban en el working tree antes de la
+> sesión del 2026-10-04** y se han conservado tal cual.
 
 ### 1.3 Invariantes del proyecto
 
@@ -98,6 +100,20 @@ Sobre el estado de §1.2, sin modificar código:
   escenario de defaults y en un escenario con soporte 0.
 - Los valores por defecto de §1.4 **verificados sobre la app renderizada**, no deducidos.
 - Aviso 🔴 **verificado renderizando**: 1 `st.warning` con el texto nuevo (§7.3).
+
+Validación del 2026-10-04 tras crear la segunda página (ver §6.0):
+
+- **AppTest desde el entrypoint**: 0 excepciones al arrancar, al calcular el precio, al ir
+  al Dashboard, al volver a Predicción y al repetir el ciclo dos veces.
+- Los 7 valores por defecto de §1.4 coinciden **exactamente** con los de la app movida a
+  `app_pages/prediccion.py`: Fiesta · Manual · Diesel · 2020 · 1.000 km · 145 € · 58,9 mpg.
+- **Precio idéntico**: 15.736,71 €, rango p5-p95 14.686,91 – 16.692,08 €, 5 coches
+  cercanos, sin aviso de soporte. La lógica de predicción no ha cambiado.
+- Los dos `st.page_link` se renderizan y **resuelven a páginas registradas**: si el
+  destino no estuviera registrado, `st.page_link` lanzaría `StreamlitPageNotFoundError`.
+- Servidor real (`streamlit run`): `/` y `/dashboard` devuelven 200 y el log no tiene
+  errores.
+- `md5sum modelo_coches.pkl` = `72441976dd0ba4ba2f95acc3c3bee3f9` (sin cambios).
 
 ---
 
@@ -226,7 +242,9 @@ modelo_coches.pkl                    El que carga la app. Backup en modelo_coche
 
 | Fichero | Rol |
 |---|---|
-| `prediccion_coche2.py` | **La app.** Carga el PKL y el CSV limpio. |
+| `prediccion_coche2.py` | **El entrypoint.** Solo `st.set_page_config` + `st.navigation` + `page.run()`. Ya no contiene lógica de predicción (§6.0). |
+| `app_pages/prediccion.py` | **La página de Predicción.** Es el código que antes estaba dentro de `prediccion_coche2.py`, sin cambios de lógica: carga el PKL y el CSV limpio y hace la predicción (§6, §7). |
+| `app_pages/dashboard.py` | **La página de Dashboard.** Solo navegación y un caption: **ningún gráfico todavía** (§6.0, §8.7). |
 | `prediccion_coche.py`, `prediccion_coche1.py` | Borradores antiguos. **Abandonados.** |
 | `limpiar_datos.py` | Función `limpiar(df)` (R1..R6) + `__main__` que escribe el CSV limpio e imprime informe. |
 | `entrenar_modelo.py` | Reentrena, compara 3 escenarios y hace la prueba funcional. Escribe `modelo_coches_nuevo.pkl` (no toca el de la app). |
@@ -397,7 +415,55 @@ comparación válida es **B → C: RMSE −38 %**.
 
 ## 6. Cómo funciona la app HOY
 
-Todo lo de esta sección está en `prediccion_coche2.py` y **sí es vigente**.
+### 6.0 Estructura multipágina y navegación
+
+La app es **multipágina** desde el 2026-10-04. Estructura:
+
+```
+prediccion_coche2.py          ENTRYPOINT: set_page_config + st.navigation + pagina.run()
+app_pages/prediccion.py       🚗 Predicción — la lógica de §6.2 a §7.3, sin cambios
+app_pages/dashboard.py        📊 Dashboard  — sin gráficos todavía
+```
+
+```python
+# prediccion_coche2.py
+pagina = st.navigation([
+    st.Page("app_pages/prediccion.py", title="Predicción", icon=":material/directions_car:"),
+    st.Page("app_pages/dashboard.py",  title="Dashboard",  icon=":material/bar_chart:"),
+])
+pagina.run()
+```
+
+**Reglas de esta estructura (no romperlas):**
+
+| Regla | Por qué |
+|---|---|
+| **El entrypoint conserva el nombre `prediccion_coche2.py`** | Es el comando documentado en §3.3 y §11: `streamlit run prediccion_coche2.py` |
+| **`st.set_page_config` va solo en el entrypoint** | Es la única llamada válida; las páginas no la repiten |
+| **El directorio es `app_pages/`, no `pages/`** | `pages/` es la API antigua y **contradice** a `st.navigation`: en cuanto se ejecuta `st.navigation`, Streamlit ignora el directorio `pages/` |
+| **Las páginas son scripts directos** | No se envuelven en funciones: el cuerpo va tal cual, como manda la convención de Streamlit |
+| **`st.Page` con rutas relativas al entrypoint** | Las rutas de `st.Page` y de `st.page_link` se resuelven respecto a `prediccion_coche2.py`, no al fichero de la propia página |
+
+**Las rutas relativas de los recursos siguen funcionando** porque
+`joblib.load("modelo_coches.pkl")` y `pd.read_csv(...)` se resuelven contra el **directorio
+de trabajo** del proceso, y ese sigue siendo `Modulo11` (Streamlit añade el directorio del
+entrypoint a `sys.path`, pero **no** hace `chdir`). Por eso hay que seguir lanzando la app
+desde `Modulo11`, igual que hasta ahora.
+
+**Los tres caminos de navegación que existen hoy:**
+
+1. **El menú lateral** que dibuja `st.navigation` con las dos páginas. Es la navegación
+   principal.
+2. **`st.page_link` en cada página**, debajo del título: "📊 Ver Dashboard" en Predicción
+   (`width="stretch"`) y "← Volver a Predicción" en Dashboard (`width="content"`).
+3. **Las URLs**: `/` sirve la página por defecto (Predicción) y `/dashboard` el Dashboard.
+
+> **Cómo funciona por dentro el `st.page_link`:** el enlace lleva el `page_script_hash` de
+> la página destino, y el front-end navega con ese hash (`onPageChange(pageScriptHash)`).
+> El campo `page` es solo el `href`. En el enlace de vuelta ese `href` sale **vacío**,
+> porque la página por defecto no tiene `url_pathname`: es el comportamiento normal de
+> Streamlit y **no afecta al clic**. Si el destino no estuviera registrado, `st.page_link`
+> lanzaría `StreamlitPageNotFoundError`, así que absence de excepción = destino válido.
 
 ### 6.1 Los widgets y sus rangos
 
@@ -688,6 +754,7 @@ hiperparámetros ni los datasets.
 | 6 | **B** — Rangos de los widgets desde los datos | Año, kilometraje, motor y mpg derivan su rango de los valores reales (§6.1) | Sí | `c119671` |
 | 7 | **TAX dinámico** | Valor inicial del impuesto por grupo N1-N4, mediana ajustada (§6.3) | Sí | `31adbea` |
 | 8 | **Aviso 🔴 compacto** | Mensaje de soporte 0 en una línea (§7.3) | Sí | `a4610ee` |
+| 9 | **Segunda página + navegación** | `st.navigation` + `app_pages/`: 🚗 Predicción y 📊 Dashboard, con enlaces cruzados (§6.0) | Sí | *sin commitear* |
 
 ### 8.1-8.4 — Cómo implementaron C, D, X y E
 
@@ -736,6 +803,30 @@ Casos verificados: `Fiesta 2020 Manual Diesel` → **145** (N1 vacío, N2 con 78
 `Fiesta 2016 Manual Diesel` → **0** (N1 con 94) · `Mondeo 2016 Automatic Electric` →
 **125** (N1 con 2 filas < 3, así que **no usa las 2 filas de N1**; usa N2 con 23) ·
 `B-MAX 1996 Manual Diesel` → **20** (N3).
+
+### 8.7 — Segunda página: 📊 Dashboard (solo estructura)
+
+El 2026-10-04 se creó la segunda página **sin ningún gráfico**, que es exactamente lo que se
+pidió en ese paso. Lo único que hay dentro es el enlace de vuelta y un caption que dice que
+el espacio está preparado.
+
+**Lo que este cambio tocó y lo que no:**
+
+|elemento | Estado |
+|---|---|
+| Modelo, `.pkl`, dataset, preprocesamiento, hiperparámetros | **Sin tocar** |
+| Precio, rango p5-p95, soporte, coches cercanos, avisos | **Sin tocar**: verificado con el mismo resultado que antes del cambio (§1.5) |
+| `prediccion_coche2.py` | Convertido en entrypoint: pierde el cuerpo y gana la navegación |
+| `app_pages/prediccion.py` | Recibe ese mismo cuerpo, **sin cambios de lógica** |
+| `app_pages/dashboard.py` | Nuevo, sin datos y sin gráficos |
+
+> **Para el siguiente paso (los gráficos):** el Dashboard todavía **no** carga el dataset ni
+> el modelo. Cuando se le añadan gráficos hay que decidir si se los pasa la página de
+> Predicción por `st.session_state` o si cada página los carga por su cuenta. Ojo con lo
+> segundo: `joblib.load("modelo_coches.pkl")` son 33 MB y ahora mismo **no está cacheado**
+> (`@st.cache_resource`), así que se volvería a leer en cada cambio de página. Cachearlo
+> sería una mejora, pero es un cambio de comportamiento y debe hacerse con el usuario
+> delante.
 
 ---
 
@@ -810,6 +901,7 @@ para implementarse.
 - **`Ranger` no se puede consultar** en la app (el encoder no lo aprendió). Está en el
   CSV con 1 fila. Si algún día se quiere ofrecer, hay que reentrenar (§4.3).
 - **La lista de claves viejas de `session_state` no se limpia.** Memoria despreciable.
+- **El Dashboard no tiene contenido todavía** (§8.7): es solo estructura y navegación.
 - 🗣️ **Pregunta abierta de §2.3** sobre delegación vs proporcionalidad.
 
 ---
@@ -824,7 +916,7 @@ para implementarse.
 
 | Commit | Qué llevó |
 |---|---|
-| `a4610ee` | **Aviso 🔴 compacto** (§7.3) + **reorganización de este `AGENTS.md`** (§10 y §11 como historial). Es el HEAD actual |
+| `a4610ee` | **Aviso 🔴 compacto** (§7.3) + **reorganización de este `AGENTS.md`** (§10 y §11 como historial) |
 | `31adbea` | **Tax dinámico** (§8.6) + documentación |
 | `c119671` | **Opción B**: rangos de los widgets derivados del dataset + `mpg` dinámico + suelo `KM_MIN_INICIAL` (§8.5) + documentación |
 | `fa66a19` | **Opción E**: rango orientativo p5-p95 (§7.1) |
@@ -834,7 +926,9 @@ para implementarse.
 | `b260e6d` | Estado de Git tras el commit `9143a5a` |
 | `9143a5a` | *"Corrige el bug que hacía que todos los coches valieran 18.032,07 €"*. Se versionaron los 18 ficheros de `Modulo11/` (código, este `AGENTS.md`, notebooks, CSV original y limpio, tema de Streamlit) y se creó `Modulo11/.gitignore` (§3.4) |
 
-**5 de estos commits están sin pushear** a `origin/main` (los 5 primeros de la tabla).
+**Estado de los pushes en el momento en que se escribió esta tabla:** 5 de estos commits
+estaban sin pushear a `origin/main` (los 5 primeros). **Hoy ya están todos pusheados**: el
+estado real está en §1.2, que es la fuente de verdad.
 
 Copia de seguridad `_antes_F.py` (el fichero de la app antes de la opción B): se borró,
 nunca estuvo versionada y la versión anterior está en `fa66a19`. `git log --oneline` es
@@ -944,3 +1038,7 @@ explicito (§9.4). **Los puntos realmente abiertos** son:
 - El **rango del `tax`** (0-600, 35 valores reales) — §9.2.3.
 - La **pregunta de delegación vs proporcionalidad** — §2.3.
 - La **E original** (rango de los coches cercanos) — §9.3.
+
+**Siguiente paso previsto:** los gráficos del Dashboard, uno a uno. Antes hay que decidir
+cómo llega el dataset y el modelo a `app_pages/dashboard.py` (session_state vs carga propia
+con `@st.cache_resource`) — está raising en §8.7.
