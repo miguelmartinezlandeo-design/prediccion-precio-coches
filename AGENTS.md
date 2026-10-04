@@ -1,4 +1,4 @@
-# AGENTS.md — Modulo11: Predicción del precio de coches
+# AGENTS.md — Predicción del precio de coches
 
 Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 
@@ -27,6 +27,19 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
   `modelo.predict()`). Los números de línea caducan con cada commit.
 - Los ficheros `.pkl` y `*_backup_*` están **fuera de git** a propósito (ver §3.4).
 
+### 0.1 Dónde vive el proyecto
+
+| Dato | Valor |
+|---|---|
+| Raíz del proyecto | `/home/miguel/mi_entorno/prediccion-precio-coches` — **la raíz ES el proyecto** |
+| Repositorio Git | `https://github.com/miguelmartinezlandeo-design/prediccion-precio-coches.git` |
+| Rama | `main` |
+
+> **Este repositorio es independiente.** Hasta el 2026-10-04 el proyecto vivió como
+> `Python/Modulo11/` dentro del repositorio `Python`. Ya no: se extrajo con su historial
+> completo a este repositorio propio. Cualquier mención a `Modulo11` que quede en §10 es
+> **histórica**, no la ubicación actual. Detalle de la migración en §10.5.
+
 ---
 
 ## 1. ESTADO ACTUAL
@@ -36,27 +49,47 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 
 ### 1.1 Última sesión (2026-10-04)
 
-1. **Segunda página + navegación** (Dashboard). La app pasa a ser multipágina con
-   `st.navigation` + `st.Page`: 🚗 Predicción y 📊 Dashboard. Ver §6.0 y §8.7.
-   **El Dashboard está vacío a propósito: todavía no tiene ningún gráfico.**
-2. Antes, en la sesión del 2026-10-03: tax dinámico (§8.6), aviso 🔴 compacto (§7.3) y
+1. **El proyecto se hizo independiente.** Se extrajo de `Python/Modulo11/` a su propio
+   repositorio `prediccion-precio-coches`, con sus 13 commits, y se estableció como remote
+   `origin`. Ver §0.1 y §10.5.
+2. **`requirements.txt` versionado** (`ef23f53`): fija las 5 dependencias con las que se
+   valida la app. El `.venv` se reconstruye desde ahí (§3.3).
+3. Antes, en la misma fecha: **segunda página + navegación** (Dashboard). La app pasa a ser
+   multipágina con `st.navigation` + `st.Page`: 🚗 Predicción y 📊 Dashboard. Ver §6.0 y
+   §8.7. **El Dashboard está vacío a propósito: todavía no tiene ningún gráfico.**
+4. Antes, en la sesión del 2026-10-03: tax dinámico (§8.6), aviso 🔴 compacto (§7.3) y
    reorganización de este `AGENTS.md`.
 
 ### 1.2 Estado del repositorio
 
 | Dato | Valor |
 |---|---|
+| Repositorio | **`prediccion-precio-coches`** (independiente, antes `Python/Modulo11/`) |
+| Raíz | `/home/miguel/mi_entorno/prediccion-precio-coches` |
+| Remote `origin` | `https://github.com/miguelmartinezlandeo-design/prediccion-precio-coches.git` |
 | Rama | `main` |
-| HEAD | `5d877d3` — *"actualiza el estado de git en AGENTS.md tras el push de d03bde2"* |
+| HEAD | El commit que lleva esta actualización de `AGENTS.md` (*"actualiza AGENTS para el repositorio independiente"*). Padre: `ef23f53` |
+| Commits totales | **14** (12 migrados de `Modulo11/` + `ef23f53` + este) |
 | Commits sin pushear | **0** |
-| Working tree | **Con cambios sin commitear** (esperando autorización del usuario): `prediccion_coche2.py` reescrito como entrypoint, `app_pages/` nuevo, `.streamlit/config.toml` y `.opencode/agents/design-agent.md` |
-| `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`, fecha `Oct 2 01:07` |
+| Working tree | **Limpio**. Todo versionado, incluidos `AGENTS.md` y `requirements.txt` |
+| Ficheros versionados | **17** |
+| `modelo_coches.pkl` | **Sin tocar y sin versionar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9` |
+| `requirements.txt` | **Versionado** (`ef23f53`). 5 dependencias fijadas con `==` |
+| `.venv/` | **Local e ignorado por git** (§3.4). Python 3.12.3 |
 | CSV original | **Sin tocar.** 17.966 filas |
 | CSV limpio | 17.811 filas |
 
 > Los cambios de `.streamlit/config.toml` (`dataframeHeaderBackgroundColor`) y de las
-> `column_config` de la tabla de cercanos **ya estaban en el working tree antes de la
-> sesión del 2026-10-04** y se han conservado tal cual.
+> `column_config` de la tabla de cercanos ya estaban en el working tree antes de la sesión
+> del 2026-10-04 y se han conservado tal cual.
+>
+> **Por qué la fila de HEAD no lleva hash:** un commit no puede contener su propio hash.
+> Es el commit de esta actualización de `AGENTS.md` y su padre es `ef23f53`. En cuanto
+> exista un commit posterior, sustituye esa descripción por su hash real (§11, paso 2).
+>
+> **Los hashes de este repositorio son nuevos.** Al extraer el proyecto se reescribió el
+> historial, así que ningún commit conserva su hash anterior. Tabla de equivalencias en
+> §10.5.
 
 ### 1.3 Invariantes del proyecto
 
@@ -114,6 +147,20 @@ Validación del 2026-10-04 tras crear la segunda página (ver §6.0):
 - Servidor real (`streamlit run`): `/` y `/dashboard` devuelven 200 y el log no tiene
   errores.
 - `md5sum modelo_coches.pkl` = `72441976dd0ba4ba2f95acc3c3bee3f9` (sin cambios).
+
+Validación del 2026-10-04 tras migrar el proyecto y montar su `.venv` propio:
+
+- **`.venv` nuevo** creado en la raíz del repositorio con Python 3.12.3 e instalado desde
+  `requirements.txt`. Las 5 versiones coinciden con las de §3.3: streamlit 1.64.0,
+  pandas 3.0.6, numpy 2.5.3, scikit-learn 1.9.1, joblib 1.6.0.
+- **AppTest con el `.venv` nuevo: 33/33 comprobaciones correctas** — arranque, los 7
+  defaults de §1.4, precio **15.736,71 €**, rango p5-p95, 5 coches cercanos, ausencia de
+  avisos, Dashboard, 2 ciclos de navegación, recálculo y escenario con soporte 0.
+- **Servidor real** con el `.venv` nuevo: `/` → 200, `/dashboard` → 200,
+  `/prediccion` → 200, log sin errores ni avisos.
+- **El modelo carga** en el entorno nuevo: `Pipeline` con las 8 features
+  (`year`, `mileage`, `tax`, `mpg`, `engineSize`, `model`, `transmission`, `fuelType`).
+- `md5sum modelo_coches.pkl` = `72441976dd0ba4ba2f95acc3c3bee3f9` en los dos sitios.
 
 ---
 
@@ -240,48 +287,89 @@ modelo_coches.pkl                    El que carga la app. Backup en modelo_coche
 
 ### 3.2 Ficheros
 
+**Versionados en git (17):**
+
 | Fichero | Rol |
 |---|---|
 | `prediccion_coche2.py` | **El entrypoint.** Solo `st.set_page_config` + `st.navigation` + `page.run()`. Ya no contiene lógica de predicción (§6.0). |
 | `app_pages/prediccion.py` | **La página de Predicción.** Es el código que antes estaba dentro de `prediccion_coche2.py`, sin cambios de lógica: carga el PKL y el CSV limpio y hace la predicción (§6, §7). |
 | `app_pages/dashboard.py` | **La página de Dashboard.** Solo navegación y un caption: **ningún gráfico todavía** (§6.0, §8.7). |
-| `prediccion_coche.py`, `prediccion_coche1.py` | Borradores antiguos. **Abandonados.** |
 | `limpiar_datos.py` | Función `limpiar(df)` (R1..R6) + `__main__` que escribe el CSV limpio e imprime informe. |
 | `entrenar_modelo.py` | Reentrena, compara 3 escenarios y hace la prueba funcional. Escribe `modelo_coches_nuevo.pkl` (no toca el de la app). |
+| `used_car_price_analysis.csv` | ORIGINAL, 17.966 filas. **No se modifica nunca** (§1.3). |
+| `used_car_price_analysis_limpio.csv` | LIMPIO, 17.811 filas. Lo leen el entrenamiento y la app. |
+| `requirements.txt` | Las 5 dependencias del proyecto fijadas con `==` (§3.3). |
+| `AGENTS.md` | Este fichero. La memoria del proyecto (§2.4 regla 9). |
 | `mejorar_pred.md` | Peticiones originales de mejora de la UI + la regla de delegación + la regla de proporcionalidad (§2.2). |
-| `modelo_coches_backup_20261002_005315.pkl` | Backup del modelo con el bug de espacios (scikit-learn 1.9.0). |
-| `used_car_price_analysis_backup_20261002_005316.csv` | Backup del CSV original. |
+| `.gitignore` | Reglas de este repositorio (§3.4). |
+| `.streamlit/config.toml` | Tema de Streamlit. |
+| `.opencode/agents/data-analyst.md` | Agente de análisis de datos (§2.1). |
+| `.opencode/agents/design-agent.md` | Agente de diseño de la aplicación. |
+| `prediccion_coche.py`, `prediccion_coche1.py` | Borradores antiguos. **Abandonados.** |
+| `prueba_1.ipynb` | Notebook del curso (IBM Skills Network) sobre el **mismo** dataset. Es el origen de varias reglas de limpieza (§4.2), pero **la app y el pipeline no lo usan** (§9.5) |
+
+**Locales y fuera de git (existen en disco, los genera o respalda el pipeline):**
+
+| Fichero | Rol |
+|---|---|
+| `modelo_coches.pkl` | **El modelo que carga la app.** Lo genera `entrenar_modelo.py`. MD5 §1.2 |
+| `modelo_coches_backup_20261002_005315.pkl` | Backup del modelo con el bug de espacios (scikit-learn 1.9.0). **Irrecuperable** si se pierde |
+| `used_car_price_analysis_backup_20261002_005316.csv` | Backup del CSV original |
+| `.venv/` | Entorno virtual local del proyecto. Lo crea `pip install -r requirements.txt` |
+| `modelo_coches_nuevo.pkl` | Solo aparece cuando se reentrena (§2.4 regla 5) |
+
+> `.opencode/` además tiene en disco `node_modules/`, `package.json` y
+> `package-lock.json`, que están **ignorados a propósito** por `.opencode/.gitignore`
+> (fichero que, al ignorarse a sí mismo, tampoco está versionado).
 
 ### 3.3 Comandos y entorno
 
 ```bash
-cd /home/miguel/mi_entorno/Python/Modulo11
+cd /home/miguel/mi_entorno/prediccion-precio-coches
 source .venv/bin/activate
 streamlit run prediccion_coche2.py    # la app
 python limpiar_datos.py               # regenera el CSV limpio + informe
 python entrenar_modelo.py             # reentrena, compara y guarda modelo_coches_nuevo.pkl
 ```
 
-Entorno: Python 3.12.3, scikit-learn 1.9.1, pandas 3.0.6, numpy 2.5.3, joblib 1.6.0,
-streamlit 1.64.0 (venv en `.venv/`).
+Entorno: **Python 3.12.3** y las 5 dependencias fijadas en `requirements.txt`
+(`streamlit==1.64.0`, `pandas==3.0.6`, `numpy==2.5.3`, `scikit-learn==1.9.1`,
+`joblib==1.6.0`).
 
-### 3.4 `Modulo11/.gitignore`
+**Para reconstruir el entorno desde cero:**
+
+```bash
+cd /home/miguel/mi_entorno/prediccion-precio-coches
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+> Las versiones van fijadas con `==` **a propósito**: `modelo_coches.pkl` es un pickle de
+> scikit-learn y esos artefactos no se pueden cargar con otra versión mayor del mismo
+> paquete. `modelo_coches_backup_20261002_005315.pkl` es la excepción: se entrenó con
+> scikit-learn 1.9.0 y **solo** carga con esa versión.
+>
+> El venv **no** se reutiliza entre ubicaciones: guarda rutas absolutas del intérprete.
+
+### 3.4 `.gitignore`
 
 ```
-.venv/
+.venv/              # entorno virtual local del proyecto
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-*.pkl          # 67 MB entre modelo y backup; se regenera con entrenar_modelo.py
-*_backup_*     # copias byte a byte de archivos ya versionados
-prueba_*.zip
+*.pkl               # modelo y backups; se regeneran con python entrenar_modelo.py
+*_backup_*          # copias byte a byte de archivos ya versionados
+prueba_*.zip        # exportaciones comprimidas de los notebooks
 ```
 
-**Verificado: 0 ficheros `.pkl` dentro del repo.** `modelo_coches.pkl` y su backup
-siguen en disco, solo fuera de git. El `.gitignore` de la raíz del repo
-(`/home/miguel/mi_entorno/Python/.gitignore`) existe pero **solo ignora `Modulo12/`**:
-no tiene `__pycache__/` ni `*.pyc`, así que un commit desde la raíz puede arrastrar
-`.pyc`. Si vuelve a aparecer basura así, amplíalo.
+**Verificado: 0 ficheros `.pkl` dentro del repo.** `modelo_coches.pkl` y sus backups
+siguen en disco, solo fuera de git (§3.2).
+
+> Antes de la migración, el proyecto vivía en `Python/Modulo11/` y su `.gitignore` era
+> este mismo fichero. El `.gitignore` de la raíz del repositorio `Python` es otro fichero
+> distinto y ya no afecta a este proyecto; ahora `Modulo11/` está ignorado ahí para que el
+> directorio sobrante no vuelva a aparecer por error. Ver §10.5.
 
 ---
 
@@ -446,9 +534,9 @@ pagina.run()
 
 **Las rutas relativas de los recursos siguen funcionando** porque
 `joblib.load("modelo_coches.pkl")` y `pd.read_csv(...)` se resuelven contra el **directorio
-de trabajo** del proceso, y ese sigue siendo `Modulo11` (Streamlit añade el directorio del
-entrypoint a `sys.path`, pero **no** hace `chdir`). Por eso hay que seguir lanzando la app
-desde `Modulo11`, igual que hasta ahora.
+de trabajo** del proceso, y ese sigue siendo la raíz del repositorio (§0.1). Streamlit añade
+el directorio del entrypoint a `sys.path`, pero **no** hace `chdir`. Por eso hay que seguir
+lanzando la app desde la raíz del proyecto, igual que hasta ahora.
 
 **Los tres caminos de navegación que existen hoy:**
 
@@ -746,15 +834,18 @@ hiperparámetros ni los datasets.
 
 | # | Cambio | Qué hace | Validado | Commit |
 |---|---|---|---|---|
-| 1 | **CSV limpio + lista de modelos del encoder** | La app lee el CSV limpio y ofrece los 22 modelos del encoder en vez de una lista fija de 9 | Sí | `9143a5a` |
-| 2 | **C** — Valores iniciales dinámicos | Kilometraje, mpg y motor se derivan del grupo de referencia (§6) | Sí | `d918107` |
-| 3 | **D** — Aviso de soporte de datos | 4 niveles por radio en distancia estandarizada (§7.3) | Sí | `d918107` |
-| 4 | **X** — Tabla de cercanos acotada | Máx. 5 coches dentro del ±10 % del precio, con desempate estable (§7.2) | Sí | `d918107` |
-| 5 | **E** — Rango orientativo p5-p95 | Percentiles 5 y 95 de los 200 árboles, en un caption (§7.1) | Sí | `fa66a19` |
-| 6 | **B** — Rangos de los widgets desde los datos | Año, kilometraje, motor y mpg derivan su rango de los valores reales (§6.1) | Sí | `c119671` |
-| 7 | **TAX dinámico** | Valor inicial del impuesto por grupo N1-N4, mediana ajustada (§6.3) | Sí | `31adbea` |
-| 8 | **Aviso 🔴 compacto** | Mensaje de soporte 0 en una línea (§7.3) | Sí | `a4610ee` |
-| 9 | **Segunda página + navegación** | `st.navigation` + `app_pages/`: 🚗 Predicción y 📊 Dashboard, con enlaces cruzados (§6.0) | Sí | *sin commitear* |
+| 1 | **CSV limpio + lista de modelos del encoder** | La app lee el CSV limpio y ofrece los 22 modelos del encoder en vez de una lista fija de 9 | Sí | `9f60cb4` |
+| 2 | **C** — Valores iniciales dinámicos | Kilometraje, mpg y motor se derivan del grupo de referencia (§6) | Sí | `f843e2a` |
+| 3 | **D** — Aviso de soporte de datos | 4 niveles por radio en distancia estandarizada (§7.3) | Sí | `f843e2a` |
+| 4 | **X** — Tabla de cercanos acotada | Máx. 5 coches dentro del ±10 % del precio, con desempate estable (§7.2) | Sí | `f843e2a` |
+| 5 | **E** — Rango orientativo p5-p95 | Percentiles 5 y 95 de los 200 árboles, en un caption (§7.1) | Sí | `c73998c` |
+| 6 | **B** — Rangos de los widgets desde los datos | Año, kilometraje, motor y mpg derivan su rango de los valores reales (§6.1) | Sí | `49f77e2` |
+| 7 | **TAX dinámico** | Valor inicial del impuesto por grupo N1-N4, mediana ajustada (§6.3) | Sí | `e0feaeb` |
+| 8 | **Aviso 🔴 compacto** | Mensaje de soporte 0 en una línea (§7.3) | Sí | `f7f1692` |
+| 9 | **Segunda página + navegación** | `st.navigation` + `app_pages/`: 🚗 Predicción y 📊 Dashboard, con enlaces cruzados (§6.0) | Sí | `3783b5c` |
+
+> Los hashes de esta tabla son los de **este** repositorio. Los equivalentes del
+> repositorio `Python` están en §10.5.
 
 ### 8.1-8.4 — Cómo implementaron C, D, X y E
 
@@ -900,6 +991,11 @@ para implementarse.
 
 - **`Ranger` no se puede consultar** en la app (el encoder no lo aprendió). Está en el
   CSV con 1 fila. Si algún día se quiere ofrecer, hay que reentrenar (§4.3).
+- **`prueba_1.ipynb` no se puede ejecutar con el entorno de este proyecto.** Importa
+  `matplotlib` y `seaborn`, que **no** están en `requirements.txt` porque ni la app ni
+  `limpiar_datos.py` ni `entrenar_modelo.py` los necesitan. Además descarga el dataset de
+  una URL del curso en vez de leer el CSV local, así que sus resultados **no son** la
+  fuente de verdad: la fuente de verdad es `limpiar_datos.py` y `used_car_price_analysis_limpio.csv`.
 - **La lista de claves viejas de `session_state` no se limpia.** Memoria despreciable.
 - **El Dashboard no tiene contenido todavía** (§8.7): es solo estructura y navegación.
 - 🗣️ **Pregunta abierta de §2.3** sobre delegación vs proporcionalidad.
@@ -914,24 +1010,27 @@ para implementarse.
 
 ### 10.1 Cronología de commits
 
+> Hashes de **este** repositorio. Los del repositorio `Python` están en §10.5. Los commits
+> que solo tocaban el repositorio `Python` (no el proyecto) no aparecen aquí.
+
 | Commit | Qué llevó |
 |---|---|
-| `a4610ee` | **Aviso 🔴 compacto** (§7.3) + **reorganización de este `AGENTS.md`** (§10 y §11 como historial) |
-| `31adbea` | **Tax dinámico** (§8.6) + documentación |
-| `c119671` | **Opción B**: rangos de los widgets derivados del dataset + `mpg` dinámico + suelo `KM_MIN_INICIAL` (§8.5) + documentación |
-| `fa66a19` | **Opción E**: rango orientativo p5-p95 (§7.1) |
-| `d918107` | **C** (defaults dinámicos), **D** (aviso de soporte), **X** (tabla ±10 %) + `mejorar_pred.md` |
-| `0528228` | `chore: ignore Modulo12` (repositorio independiente) |
-| `e14039d` | Estado de Git en `AGENTS.md`: Modulo10 ya versionado por el usuario |
-| `b260e6d` | Estado de Git tras el commit `9143a5a` |
-| `9143a5a` | *"Corrige el bug que hacía que todos los coches valieran 18.032,07 €"*. Se versionaron los 18 ficheros de `Modulo11/` (código, este `AGENTS.md`, notebooks, CSV original y limpio, tema de Streamlit) y se creó `Modulo11/.gitignore` (§3.4) |
-
-**Estado de los pushes en el momento en que se escribió esta tabla:** 5 de estos commits
-estaban sin pushear a `origin/main` (los 5 primeros). **Hoy ya están todos pusheados**: el
-estado real está en §1.2, que es la fuente de verdad.
+| `ef23f53` | **`requirements.txt`**: fija las 5 dependencias del proyecto (§3.3) |
+| `3783b5c` | **Segunda página + navegación**: `st.navigation` + `app_pages/` (§6.0, §8.7) |
+| `c4f6526` | Estado de Git en este fichero tras el push de `599589e` |
+| `599589e` | Separa el procedimiento del agente en `mejorar_pred.md` y corrige las reglas de commit |
+| `dc1641f` | Estado de Git en este fichero tras el commit `f7f1692` |
+| `f7f1692` | **Aviso 🔴 compacto** (§7.3) + **reorganización de este `AGENTS.md`** (§10 y §11 como historial) |
+| `e0feaeb` | **Tax dinámico** (§8.6) + documentación |
+| `49f77e2` | **Opción B**: rangos de los widgets derivados del dataset + `mpg` dinámico + suelo `KM_MIN_INICIAL` (§8.5) + documentación |
+| `c73998c` | **Opción E**: rango orientativo p5-p95 (§7.1) |
+| `f843e2a` | **C** (defaults dinámicos), **D** (aviso de soporte), **X** (tabla ±10 %) + `mejorar_pred.md` |
+| `e2f68e3` | Corrige el estado de Git: `Modulo10` ya versionado por el usuario |
+| `44bdeac` | Estado de Git en este fichero tras el commit `9f60cb4` |
+| `9f60cb4` | *"Corrige el bug que hacía que todos los coches valieran 18.032,07 €"*. Primer commit del proyecto: se versionaron 18 ficheros (código, este `AGENTS.md`, notebooks, CSV original y limpio, tema de Streamlit) y se creó el `.gitignore` (§3.4) |
 
 Copia de seguridad `_antes_F.py` (el fichero de la app antes de la opción B): se borró,
-nunca estuvo versionada y la versión anterior está en `fa66a19`. `git log --oneline` es
+nunca estuvo versionada y la versión anterior está en `c73998c`. `git log --oneline` es
 la fuente de verdad para los hashes.
 
 ### 10.2 Opciones que se evaluaron (todo cerrado salvo G)
@@ -1000,23 +1099,70 @@ dos decimales para una consulta con 0 filas de apoyo. Eso es lo que corrigieron 
 
 ### 10.4 Estado de Git del 2026-10-02 (superado)
 
-Contexto de la sesión en que se commitearon C, D y X:
+Contexto de la sesión en que se commitearon C, D y X, cuando el proyecto **todavía** vivía
+en `Python/Modulo11/` dentro del repositorio `Python`. Sus hashes no existen aquí (§10.5):
 
 | Dato | Valor |
 |---|---|
-| HEAD | `0528228` |
+| HEAD en el repo `Python` | `0528228` |
 | Sin commitear | `AGENTS.md`, `prediccion_coche2.py`, `mejorar_pred.md` |
 | Después | El usuario commiteó `Modulo10/`, `.agents/` y `.claude/` por su cuenta en `a0881d1` |
 
 Ese commit desde la raíz arrastró `Modulo10/__pycache__/*.pyc` porque el `.gitignore` de
-la raíz no cubría `__pycache__`. Ver el estado actual de ese fichero en §3.4.
+la raíz del repo `Python` no cubría `__pycache__`. **Ese problema ya no existe aquí**: este
+repositorio tiene su propio `.gitignore` (§3.4), que sí cubre `__pycache__/` y `*.pyc`.
+
+### 10.5 Migración a repositorio independiente (2026-10-04)
+
+El proyecto pasó de ser `Python/Modulo11/` dentro del repositorio `Python` a ser un
+repositorio propio, `prediccion-precio-coches`.
+
+**Cómo se hizo, por si hay que repetirla o auditarla:**
+
+1. Se clonó el repositorio `Python` a una **copia desechable** (nunca sobre el directorio de
+   trabajo del usuario).
+2. Se extrajo solo `Modulo11/` y se convirtieron sus contenidos en la **raíz** del repositorio
+   nuevo, conservando los 12 commits con autor, fecha y mensaje.
+3. Se eliminaron del historial los ficheros de otros ejercicios: `archivo.csv`, `prueba.ipynb`,
+   `prueba_2.ipynb`, `prueba_3.ipynb` y `prueba_4.ipynb`. Se comprobó commit a commit que
+   **no aparecen en ninguno** de los 13 commits. `prueba_1.ipynb` sí se conserva.
+4. Se empujó `main` al repositorio nuevo y se eliminó `Modulo11/` del repositorio `Python`
+   (commit `ecef8b7` en `Python`, más `Modulo11/` en su `.gitignore`).
+
+**Hashes: todos cambiaron.** Reescribir el historial genera commits nuevos, así que **ningún
+hash de `Python` existe en este repositorio**:
+
+| En `Python` | Aquí | Commit |
+|---|---|---|
+| `9143a5a` | `9f60cb4` | Primer commit del proyecto |
+| `b260e6d` | `44bdeac` | Estado de Git en `AGENTS.md` |
+| `8421afc` | `e2f68e3` | Estado de Git: `Modulo10` versionado |
+| `d918107` | `f843e2a` | C, D y X + `mejorar_pred.md` |
+| `fa66a19` | `c73998c` | E: rango p5-p95 |
+| `c119671` | `49f77e2` | B: rangos desde el dataset |
+| `31adbea` | `e0feaeb` | Tax dinámico |
+| `a4610ee` | `f7f1692` | Aviso 🔴 compacto + reorganización |
+| `8b27eef` | `dc1641f` | Estado de Git |
+| `d03bde2` | `599589e` | Separación de `mejorar_pred.md` |
+| `5d877d3` | `c4f6526` | Estado de Git |
+| `f4e3c62` | `3783b5c` | Segunda página + navegación |
+| — | `ef23f53` | `requirements.txt` (nuevo en este repositorio) |
+
+**Lo que quedó fuera de git y hubo que copiar a mano:** `modelo_coches.pkl`,
+`modelo_coches_backup_20261002_005315.pkl` y
+`used_car_price_analysis_backup_20261002_005316.csv` (§3.2), más el `.venv`.
+
+> `/home/miguel/mi_entorno/Python/Modulo11` se conserva como **respaldo local** y ya no
+> forma parte del proyecto activo: ahí solo quedan los ficheros que nunca se versionaron
+> (`.venv/`, `.pkl`, backups, `node_modules`). **No hay que tocarlo**, pero tampoco hay que
+> esperanzarse a que siga intacto: los `.pkl` viven ahí fuera de git.
 
 ---
 
 ## 11. Cómo continuar
 
 ```bash
-cd /home/miguel/mi_entorno/Python/Modulo11
+cd /home/miguel/mi_entorno/prediccion-precio-coches
 source .venv/bin/activate
 streamlit run prediccion_coche2.py
 ```
@@ -1027,9 +1173,11 @@ streamlit run prediccion_coche2.py
 2. `git log --oneline -3` y `git status`: confirmar HEAD y si hay cambios sin commitear.
 3. `md5sum modelo_coches.pkl`: debe coincidir con el valor de **§1.2**. Si no, se cambió
    el modelo sin documentarlo.
-4. Para una tarea de datos, delegar en `data-analyst` (§2.1) y decidir cuánto análisis
+4. Comprobar que `.venv/` existe y sus versiones siguen siendo las de **§3.3**. Si no,
+   reconstruir con `pip install -r requirements.txt`.
+5. Para una tarea de datos, delegar en `data-analyst` (§2.1) y decidir cuánto análisis
    hace falta (§2.2).
-5. Antes de tocar la app, mirar §6 (cómo funciona) y §7 (qué ve el usuario): lo que
+6. Antes de tocar la app, mirar §6 (cómo funciona) y §7 (qué ve el usuario): lo que
    cambio ya está resuelto, no lo rehagas.
 
 **Estado de las opciones A-G:** todas cerradas salvo **G**, que necesita permiso
