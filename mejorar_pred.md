@@ -1,153 +1,165 @@
-# Reglas de trabajo del agente principal — Modulo11
+# Manual operativo del agente principal — Modulo11
 
-Este fichero contiene **reglas de trabajo**, no conocimiento técnico. La
-arquitectura, el diagnóstico del modelo, las métricas, el estado de Git y el
-historial de cambios están en **`AGENTS.md`**, que es la memoria del proyecto.
-Si necesitas un dato técnico, búscalo allí.
+Este fichero es el **procedimiento**: cómo se empieza una tarea, cómo se clasifica una
+petición, cuándo se delega, cómo se modifica y valida el código, cómo se protegen los
+datos y el modelo, cómo se usa Git y cómo se continúa un trabajo largo.
 
-> **Nota histórica.** "1. Mostrar el precio de forma destacada" y "2. Mostrar
-> los datos utilizados" fueron peticiones originales del usuario para la
-> interfaz. **Ya están implementadas** desde el commit base. Dejaban de ser
-> reglas activas; se conservan aquí solo como registro de qué se pidió, y la
-> regla que sí subsiste ("no cambies el modelo ni la predicción") está en la
-> sección 1.
+El **conocimiento del proyecto** —estado, arquitectura, dataset, limpieza, modelo,
+métricas, funcionamiento de la app, problemas conocidos e historial— está en
+**`AGENTS.md`**, que es la fuente de verdad. No lo copies aquí: búscalo allí.
 
 ---
 
-## 1. Invariantes
+## 1. Cómo empezar una tarea
 
-- **No cambies el modelo de Machine Learning** ni la forma en que se realiza la
-  predicción, salvo petición explícita del usuario.
-- **No modifiques los hiperparámetros** sin permiso. Ver sección 6.
-- **No toques el dataset** para resolver un problema de interfaz. Ver sección 5.
-- **No repitas auditorías ya hechas.** Los hallazgos están en `AGENTS.md`.
+1. **Lee `AGENTS.md`** antes de tocar nada. Contiene lo ya diagnosticado, lo ya decidido y
+   lo ya hecho. No lo vuelvas a investigar.
+2. **Comprueba el estado real:** `git log --oneline -3`, `git status` y `md5sum` del PKL,
+   comparados con `AGENTS.md` §1.2. Si no cuadran, **corrige `AGENTS.md` antes de seguir**.
+3. **Si el código contradice a `AGENTS.md`, el código manda.** Corrige la memoria en la
+   misma sesión (§9).
+4. Los comandos de arranque y el entorno están en `AGENTS.md` §3.
 
----
+## 2. Cómo clasificar una petición
 
-## 2. Delegación de tareas de datos
+Antes de editar, haz estas cuatro preguntas:
 
-### REGLA OBLIGATORIA
+1. **¿Cambio pequeño ya especificado, o investigación?** Cambio pequeño: un texto, un
+   caption, una etiqueta, un número de resultados, una condición ya definida → §6.
+   Investigación → §6, análisis exhaustivo.
+2. **¿Requiere datos?** Si hay que leer, contar, filtrar, agregar o comparar filas, es
+   tarea de `data-analyst`, no tuya → §4.
+3. **¿Toca modelo, hiperparámetros, limpieza, dataset o PKL?** Si sí, hay proceso
+   obligatorio y probablemente permiso explícito → §3, §5, §7.
+4. **¿Es un trabajo largo?** Si tiene varias fases, planifica fases y guarda checkpoints
+   → §11.
 
-Toda tarea relacionada con datos debe ser delegada al subagente
-`data-analyst`. Debes utilizarla **también cuando la consulta sea sencilla**.
-Nunca sustituyas la delegación solo porque la tarea sea fácil.
+Si algo no queda claro, **pregunta antes de editar**.
 
-Ejemplos, tal como los formuló el usuario:
+## 3. Invariantes
 
-- "Busca los 5 coches más caros."
-- "¿Cuántos coches hay?"
-- "Busca los valores nulos."
-- "Dime la media del precio."
-- "Filtra los Ford."
-- "Busca los coches más cercanos a 16000 €."
-- "Explora el DataFrame."
+No se tocan sin permiso explícito del usuario:
 
-Delega igualmente cuando el usuario pida: analizar un DataFrame, consultar los
-CSV del proyecto, filtrar, ordenar, buscar registros, calcular estadísticas,
-analizar columnas, buscar duplicados o nulos, detectar problemas de calidad de
-datos o preparar datos para gráficos.
+- **El modelo** ni la forma en que se realiza la predicción.
+- **Los hiperparámetros.**
+- **El dataset**, para resolver un problema de interfaz: los problemas de la app se
+  resuelven en la app.
+- **Las decisiones sobre qué filas conservar o descartar.** Están en `AGENTS.md`; no las
+  reviertas sin preguntar.
 
-### Límites de `data-analyst`
+## 4. Delegación de tareas de datos
 
-- **NO** modifica la aplicación.
-- **NO** ejecuta Streamlit.
-- **NO** entrena modelos. Su función es exclusivamente analizar datos; el
-  entrenamiento y la evaluación los hace el agente principal.
+**Obligatorio:** delega en `data-analyst` cualquier tarea relacionada con datos. No analices
+tú mismo los datos con Pandas, Python o SQL.
 
-### Tu papel
+**Delega cuando** el usuario pida leer o explorar un DataFrame, contar filas, buscar nulos o
+duplicados, filtrar, ordenar, buscar registros, calcular estadísticas, resumir columnas,
+detectar problemas de calidad, preparar datos para gráficos o validar un CSV.
 
-`data-analyst` realiza el análisis y devuelve los resultados. Tú interpretas,
-explicas y presentas el resultado al usuario, o decides el siguiente paso con
-él. No analices tú mismo lo que puede delegarse.
+**Límites de `data-analyst`:** no modifica la aplicación, no ejecuta Streamlit y no entrena
+modelos. El entrenamiento y la evaluación los haces tú.
 
----
-
-## 3. Resultados del subagente
-
-Cuando recibas un resultado de `data-analyst`, conserva su identificación:
+**Al presentar su resultado**, conserva su identificación:
 
 ```
 📊 DATA-ANALYST
 🔐 SUBAGENTE EJECUTADO
 ```
 
-No elimines ni sustituyas estas dos líneas al presentar el resultado.
+**Precaución con los índices de fila:** son poco fiables al comparar dos CSV con distinto
+índice. Exígele que use el `df.index` real y que pegue la salida literal del comando, o
+verifica después con un script propio.
 
----
+## 5. Proporcionalidad del análisis
 
-## 4. ⏱️ Proporcionalidad del análisis
+El análisis y la validación deben ser **proporcionales a la tarea**. Dos regímenes que no
+se mezclan:
 
-El nivel de análisis y validación debe ser **proporcional a la tarea**. Hay dos
-regímenes y no se mezclan.
+**Análisis exhaustivo** — investiga la causa de un problema de datos, detecta anomalías,
+estudia la calidad del dataset, compara modelos, valida hipótesis, toma decisiones que
+afecten al modelo, modifica datos de entrenamiento, o reentrena/evalúa un modelo. Usa
+`data-analyst` y haz las comprobaciones necesarias.
 
-**Análisis exhaustivo**, cuando la tarea implique:
+**Cambio pequeño de código** — ya especificado y sin necesidad de nuevo análisis de datos:
+no hagas análisis exhaustivo del dataset, no ejecutes baterías extensas de pruebas salvo
+que sean necesarias, modifica solo lo necesario, valida de forma breve y específica e
+informa del resultado.
 
-- investigar la causa de un problema de datos;
-- detectar anomalías o estudiar la calidad del dataset;
-- comparar modelos o validar hipótesis sobre los datos;
-- tomar decisiones que puedan afectar al modelo;
-- modificar datos de entrenamiento, o reentrenar o evaluar un modelo.
+**Regla importante:** no conviertas automáticamente un cambio pequeño en una auditoría
+completa del proyecto.
 
-En estos casos se usa `data-analyst` y se hacen las comprobaciones necesarias.
+**Cómo se coordinan §4 y §5:** la delegación sigue vigente siempre que haya tarea de
+datos; la proporcionalidad decide *cuánto* análisis se hace, no *si* se delega. Ante un
+cambio pequeño sin datos, la conclusión es que **no hay nada que delegar**, no que haya que
+delegar un análisis enorme. *`AGENTS.md` §2.3 lo registra como pendiente de confirmar con
+el usuario: pregúntale si surge la ocasión.*
 
-**Cambios pequeños de código**, para modificaciones localizadas que **ya están
-especificadas y no requieren nuevo análisis de datos**:
+## 6. Protección de datos y sincronización dataset/modelo
 
-- no hacer un análisis exhaustivo del dataset;
-- no ejecutar baterías extensas de pruebas salvo que sean necesarias;
-- modificar únicamente las líneas necesarias;
-- hacer una validación breve y específica del cambio;
-- informar del resultado.
+- **El dataset original es sagrado.** Nunca lo sobreescribas ni lo edites. La limpieza se
+  aplica con `limpiar()` y se escribe **siempre a un fichero nuevo**.
+- **El dataset limpio y el modelo están siempre sincronizados.** Si cambias la lógica de
+  `limpiar()`, hay que **reentrenar**.
+- Si añades o quitas columnas, comprueba antes que la app no las lea de forma explícita: el
+  esquema es un contrato con la app.
+- Antes de reemplazar o regenerar un fichero grande, comprueba que no está versionado o que
+  su backup existe.
 
-Ejemplos: cambiar el número de resultados mostrados, cambiar un texto de la
-interfaz, **añadir un caption**, modificar una condición ya definida, cambiar
-una etiqueta o el formato de presentación.
+## 7. Modelo, reentrenamiento y PKL
 
-**Regla importante:** no conviertas automáticamente una modificación pequeña de
-código en una auditoría completa del proyecto.
-
-> **Cómo se aplica junto con la sección 2.** Las dos reglas no se contradicen: la
-> proporcionalidad decide *cuánto* análisis se hace, y la delegación sigue
-> vigente *siempre que haya tarea de datos*. En un cambio pequeño que no
-> requiere datos, la conclusión es que **no hay nada que delegar**, no que haya
-> que delegar un análisis extenso.
-
----
-
-## 5. Datos protegidos y sincronización
-
-- **El dataset original es sagrado.** Nunca lo sobreescribas ni lo edites. La
-  limpieza se aplica con `limpiar()` y se escribe siempre a un fichero nuevo.
-- Si cambias la lógica de limpieza, hay que **reentrenar**: el dataset limpio y
-  el modelo deben estar siempre sincronizados.
-- Si añades o quitas una columna del dataset, comprueba antes que la app no la
-  lea de forma explícita. Las decisiones ya tomadas sobre qué filas conservar
-  están en `AGENTS.md`: **no las reviertas sin preguntar al usuario**.
-
----
-
-## 6. Modelo y PKL
-
-- **No cambies los hiperparámetros** sin permiso. Hay evidencia de que
-  empeoran la precisión sin resolver el problema que motivó el cambio.
-- **Reentrenar no significa mejorar.** Antes de dar por bueno un modelo nuevo,
-  compáralo con la referencia de `AGENTS.md` usando la misma partición. Sin esa
-  comparación, un PKL nuevo no se acepta.
-- **Haz un backup con fecha antes de reemplazar el PKL:**
-  `cp modelo_coches.pkl modelo_coches_backup_$(date +%Y%m%d_%H%M%S).pkl`
-- El script de entrenamiento escribe su salida en un PKL aparte, **no** en el que
-  carga la app. **Sustituirlo es un paso explícito y consciente**, nunca un
-  efecto secundario de reentrenar.
-- Si el modelo se reemplaza, verifica después que la app lo carga y arranca sin
+- **Reentrenar no significa mejorar.** Compara el modelo nuevo contra la tabla de
+  referencia de `AGENTS.md` §5.2 **con la misma partición**. Sin esa comparación, un PKL
+  nuevo no se acepta.
+- **Backup con fecha antes de reemplazar el PKL:**
+  ```bash
+  cp modelo_coches.pkl modelo_coches_backup_$(date +%Y%m%d_%H%M%S).pkl
+  ```
+- El entrenamiento escribe en un PKL aparte, **no** en el que carga la app. **Sustituirlo es
+  un paso explícito y consciente**, nunca un efecto secundario de reentrenar.
+- Si el modelo se reemplaza, verifica después (§8) que la app lo carga y arranca sin
   errores.
 
----
+## 8. Validación
 
-## 7. Git, commits y estilo
+- **Proporcional siempre** (§5): un cambio pequeño se valida en breve y de forma
+  específica; una investigación se valida en profundidad.
+- **Verifica lo renderizado, no lo deducido.** Si el cambio afecta a lo que ve el usuario,
+  compruébalo sobre la app renderizada. `data-analyst` no ejecuta Streamlit: las pruebas de
+  interfaz las haces tú.
+- **Tras cambiar limpieza, dataset o PKL:** comprueba que la app arranca sin excepciones y
+  que muestra los valores por defecto de `AGENTS.md` §1.4.
+- Si una validación falla, **arregla o repórtalo.** No des por bueno un cambio sin
+  comprobarlo ni dejes verificaciones a medias.
 
-- **No hagas commits** salvo que el usuario lo pida explícitamente.
-- Si editas `AGENTS.md`, commitea el cambio en la misma sesión: es la memoria
-  del proyecto y solo sirve si está en el repo.
+## 9. Git, commits y push
+
+- **No hagas commit ni `push`** salvo que el usuario lo autorice explícitamente.
+- Si has editado `AGENTS.md`, **actualízalo en la misma sesión** —es la memoria del
+  proyecto y solo sirve si está en el repo—, pero **no lo commitees sin autorización**:
+  déjalo listo y pídele el commit.
+- Antes de commitear, revisa `git status` y `git diff` y stagea **solo** lo previsto: no
+  arrastres ficheros generados, `.pkl`, backups ni `__pycache__`.
+
+## 10. Estilo y documentación
+
 - **Comenta el trabajo en español.**
-- Antes de reemplazar o regenerar un fichero grande, comprueba que no está
-  versionado o que su backup existe.
+- **No referencies el código por números de línea**, sino por el nombre del símbolo
+  (`soporte_datos()`, `grupo_de_referencia()`, `st.selectbox("... mpg")`,
+  `modelo.predict()`): caducan con cada commit.
+- **Actualizar `AGENTS.md` es parte del trabajo.** Si cambias el comportamiento de la app,
+  actualiza su §1 y la sección correspondiente en la misma sesión. Una memoria
+  desactualizada induce a error, que es peor que no tenerla.
+- Este fichero es **solo procedimiento**. Nada de métricas, estado de Git, valores del
+  dataset, diagnósticos ni historial: eso es de `AGENTS.md`.
+
+## 11. Auditorías largas y puntos de control
+
+Ejecútalas **por fases**. Después de cada fase significativa, registra en `AGENTS.md`:
+fase completada, hallazgos importantes, archivos afectados, pruebas realizadas, fase
+siguiente y estado de la auditoría.
+
+**Si la sesión se interrumpe**, la nueva sesión lee primero el estado guardado y
+**continúa desde la última fase completada**.
+
+**No repitas fases ya documentadas**, salvo que haya una razón concreta para verificar un
+resultado anterior. Si repites una, explica por qué en el estado.

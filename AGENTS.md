@@ -51,7 +51,7 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 | Rama | `main` |
 | HEAD | `a4610ee` — *"aviso de soporte rojo compacto y reorganizacion de AGENTS.md"* |
 | Commits sin pushear | **5** (`main` está 5 commits por delante de `origin/main`) |
-| Working tree | **Limpio.** El aviso 🔴 y la reorganización de este `AGENTS.md` ya están commiteados en `a4610ee` |
+| Working tree | **2 ficheros modificados sin commitear:** `AGENTS.md` (contradicción de la regla de commit en §2.4.8-9 y MD5 duplicado en §11.3) y `mejorar_pred.md` (remodelado como documento de reglas de trabajo del agente). Ningún cambio en la app, el dataset ni el PKL |
 | `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`, fecha `Oct 2 01:07` |
 | CSV original | **Sin tocar.** 17.966 filas |
 | CSV limpio | 17.811 filas |
@@ -189,9 +189,10 @@ de datos que delegar**, no que haya que delegar un análisis enorme.
 6. Si se cambia `limpiar()`, hay que **reentrenar** el modelo. El dataset limpio y el
    PKL deben estar siempre sincronizados.
 7. Comenta el trabajo **en español**.
-8. **No hagas commits** salvo que el usuario lo pida explícitamente.
-9. Si editas `AGENTS.md`, commitea el cambio en la misma sesión: es la memoria del
-   proyecto y solo sirve si está en el repo.
+8. **No hagas commit ni `push`** salvo que el usuario lo autorice explícitamente.
+9. Si editas `AGENTS.md`, **actualízalo siempre en la misma sesión** —es la memoria del
+   proyecto y solo sirve si está en el repo—, pero **no lo commitees sin autorización
+   explícita del usuario**: déjalo listo y pídele el commit al final.
 
 ### 2.5 Auditorías largas
 
@@ -930,8 +931,8 @@ streamlit run prediccion_coche2.py
 
 1. Leer **§1** (estado actual) y **§2** (reglas).
 2. `git log --oneline -3` y `git status`: confirmar HEAD y si hay cambios sin commitear.
-3. `md5sum modelo_coches.pkl`: debe ser `72441976dd0ba4ba2f95acc3c3bee3f9`. Si no, se
-   cambió el modelo sin documentarlo.
+3. `md5sum modelo_coches.pkl`: debe coincidir con el valor de **§1.2**. Si no, se cambió
+   el modelo sin documentarlo.
 4. Para una tarea de datos, delegar en `data-analyst` (§2.1) y decidir cuánto análisis
    hace falta (§2.2).
 5. Antes de tocar la app, mirar §6 (cómo funciona) y §7 (qué ve el usuario): lo que
