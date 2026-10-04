@@ -1,0 +1,19 @@
+# Dependencias del proyecto de prediccion de precio de coches.
+#
+# Versiones comprobadas contra el entorno que ejecuta la aplicacion
+# (Python 3.12.3) y documentadas en AGENTS.md 3.3. Estan fijadas con ==
+# a proposito: modelo_coches.pkl es un pickle de scikit-learn y este tipo
+# de artefactos no es compatible entre versiones mayores del mismo.
+#
+# streamlit     framework de la aplicacion (pagina de Prediccion y Dashboard)
+# pandas        lectura del CSV y tabla de coches cercanos
+# numpy         operaciones numericas
+# scikit-learn  carga y uso del Pipeline/RandomForestRegressor
+# joblib        lectura y escritura de modelo_coches.pkl
+#
+# No se incluye: .venv/ ni los .pkl (ver .gitignore).
+streamlit==1.64.0
+pandas==3.0.6
+numpy==2.5.3
+scikit-learn==1.9.1
+joblib==1.6.0
