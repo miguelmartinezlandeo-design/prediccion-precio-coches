@@ -31,8 +31,9 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 
 ## 1. ESTADO ACTUAL
 
-> Verificado el **2026-10-03**. Si algo de esta sección no cuadra con `git status`,
-> `git log`, `md5sum` o el código, esta sección está mal y hay que corregirla.
+> Verificado el **2026-10-03**; estado de git re-verificado el **2026-10-04**. Si algo de
+> esta sección no cuadra con `git status`, `git log`, `md5sum` o el código, esta sección
+> está mal y hay que corregirla.
 
 ### 1.1 Última sesión (2026-10-03)
 
@@ -48,9 +49,9 @@ Este fichero es la **memoria del proyecto**. Está organizado en dos bloques:
 | Dato | Valor |
 |---|---|
 | Rama | `main` |
-| HEAD | `31adbea` — *"mejora tax dinamico y documentacion"* |
-| Commits sin pushear | **4** (`main` está 4 commits por delante de `origin/main`) |
-| Working tree | **`prediccion_coche2.py` modificado sin commitear** (el aviso 🔴 de §1.1) + este `AGENTS.md` modificado en esta misma sesión |
+| HEAD | `a4610ee` — *"aviso de soporte rojo compacto y reorganizacion de AGENTS.md"* |
+| Commits sin pushear | **5** (`main` está 5 commits por delante de `origin/main`) |
+| Working tree | **Limpio.** El aviso 🔴 y la reorganización de este `AGENTS.md` ya están commiteados en `a4610ee` |
 | `modelo_coches.pkl` | **Sin tocar.** MD5 `72441976dd0ba4ba2f95acc3c3bee3f9`, fecha `Oct 2 01:07` |
 | CSV original | **Sin tocar.** 17.966 filas |
 | CSV limpio | 17.811 filas |
@@ -685,7 +686,7 @@ hiperparámetros ni los datasets.
 | 5 | **E** — Rango orientativo p5-p95 | Percentiles 5 y 95 de los 200 árboles, en un caption (§7.1) | Sí | `fa66a19` |
 | 6 | **B** — Rangos de los widgets desde los datos | Año, kilometraje, motor y mpg derivan su rango de los valores reales (§6.1) | Sí | `c119671` |
 | 7 | **TAX dinámico** | Valor inicial del impuesto por grupo N1-N4, mediana ajustada (§6.3) | Sí | `31adbea` |
-| 8 | **Aviso 🔴 compacto** | Mensaje de soporte 0 en una línea (§7.3) | Sí | **sin commitear** |
+| 8 | **Aviso 🔴 compacto** | Mensaje de soporte 0 en una línea (§7.3) | Sí | `a4610ee` |
 
 ### 8.1-8.4 — Cómo implementaron C, D, X y E
 
@@ -822,7 +823,8 @@ para implementarse.
 
 | Commit | Qué llevó |
 |---|---|
-| `31adbea` | **Tax dinámico** (§8.6) + documentación. Es el HEAD actual |
+| `a4610ee` | **Aviso 🔴 compacto** (§7.3) + **reorganización de este `AGENTS.md`** (§10 y §11 como historial). Es el HEAD actual |
+| `31adbea` | **Tax dinámico** (§8.6) + documentación |
 | `c119671` | **Opción B**: rangos de los widgets derivados del dataset + `mpg` dinámico + suelo `KM_MIN_INICIAL` (§8.5) + documentación |
 | `fa66a19` | **Opción E**: rango orientativo p5-p95 (§7.1) |
 | `d918107` | **C** (defaults dinámicos), **D** (aviso de soporte), **X** (tabla ±10 %) + `mejorar_pred.md` |
@@ -831,7 +833,7 @@ para implementarse.
 | `b260e6d` | Estado de Git tras el commit `9143a5a` |
 | `9143a5a` | *"Corrige el bug que hacía que todos los coches valieran 18.032,07 €"*. Se versionaron los 18 ficheros de `Modulo11/` (código, este `AGENTS.md`, notebooks, CSV original y limpio, tema de Streamlit) y se creó `Modulo11/.gitignore` (§3.4) |
 
-**4 de estos commits están sin pushear** a `origin/main`.
+**5 de estos commits están sin pushear** a `origin/main` (los 5 primeros de la tabla).
 
 Copia de seguridad `_antes_F.py` (el fichero de la app antes de la opción B): se borró,
 nunca estuvo versionada y la versión anterior está en `fa66a19`. `git log --oneline` es
@@ -938,8 +940,6 @@ streamlit run prediccion_coche2.py
 **Estado de las opciones A-G:** todas cerradas salvo **G**, que necesita permiso
 explicito (§9.4). **Los puntos realmente abiertos** son:
 
-- El `AGENTS.md` de esta sesión y el aviso 🔴 de `prediccion_coche2.py` están **sin
-  commitear**, a la espera de autorización del usuario.
 - El **rango del `tax`** (0-600, 35 valores reales) — §9.2.3.
 - La **pregunta de delegación vs proporcionalidad** — §2.3.
 - La **E original** (rango de los coches cercanos) — §9.3.
